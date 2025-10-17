@@ -22,7 +22,6 @@ def load_labelset(path: Path) -> List[Dict[str, Any]]:
             out.append(json.loads(line))
     return out
 
-
 def run_retrieval_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
                        client: MistralClient, embed_model: str, k: int = 5) -> Dict[str, Any]:
     labels = load_labelset(labelset_path)
@@ -127,3 +126,7 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
         "n": len(labels),
     }
     return {"rows": rows, "summary": summary}
+
+
+
+

@@ -5,9 +5,24 @@ from __future__ import annotations
 from pathlib import Path
 import csv
 from bs4 import BeautifulSoup
+import re
+
 
 BLOCK_TAGS = {"p", "li", "pre", "code"}
 HEADER_TAGS = {"h1", "h2", "h3"}
+
+HASH_SUFFIX = re.compile(r"__(?P<h>[0-9a-f]{8})\.html$", re.IGNORECASE)
+
+def _derive_doc_id(html_file: Path) -> str:
+    name = html_file.name
+    if name.endswith(".html"):
+        base = name[:-5]  # drop ".html"
+        m = HASH_SUFFIX.search(name)
+        if m:
+            # remove "__<hash>.html" from the end
+            return name[:m.start()]
+        return base
+    return html_file.stem
 
 def html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
@@ -49,7 +64,8 @@ def parse_dir(raw_dir: Path, out_csv: Path) -> int:
             # doc_id = original URL proxy: use filename without hash suffix
             # e.g., docs.stripe.com__api__<hash>.html -> docs.stripe.com__api
             stem = html_file.name[:-14] if html_file.name.endswith(".html") else html_file.stem
-            doc_id = stem  # stable id for citations
+            #doc_id = stem  # stable id for citations
+            doc_id = _derive_doc_id(html_file)
             html = html_file.read_text(encoding="utf-8", errors="ignore")
             text = html_to_text(html)
             if not text.strip():
