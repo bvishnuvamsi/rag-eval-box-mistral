@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 #from models.client_mistral import MistralClient
+from pathlib import Path
+from typing import Optional
+from dotenv import load_dotenv
 
 
 import os
@@ -71,6 +74,56 @@ def api_check() -> None:
     typer.secho(f"OK. {len(models)} model(s) visible:", fg=typer.colors.GREEN)
     for m in models[:10]:
         typer.echo(f" - {m}")
+
+# --- add near the top (after existing imports) ---
+from pathlib import Path
+from typing import Optional
+from dotenv import load_dotenv
+
+# Safe local imports with relative fallbacks (like we fixed before)
+try:
+    from .ingest.make_seed_pdfs import make_seed_pdfs
+    from .ingest.pdf_parse import parse_dir
+    from .ingest.chunkers import make_chunks
+except ImportError:
+    from ingest.make_seed_pdfs import make_seed_pdfs
+    from ingest.pdf_parse import parse_dir
+    from ingest.chunkers import make_chunks
+
+# --- add these commands at the bottom, before the if __name__ == "__main__": block ---
+
+@app.command("make-seed")
+def cmd_make_seed(out_dir: Optional[str] = typer.Option("data/seed_docs", help="Where to write seed PDFs")):
+    """
+    Create two tiny PDFs (policy + API guide) for quick testing.
+    """
+    load_dotenv()
+    path = Path(out_dir)
+    make_seed_pdfs(path)
+    typer.secho(f"Seed PDFs written to: {path.resolve()}", fg=typer.colors.GREEN)
+
+
+@app.command("ingest-pdf")
+def cmd_ingest_pdf(input_dir: Optional[str] = typer.Option("data/seed_docs", help="Folder with PDFs"),
+                   out_csv: Optional[str] = typer.Option("data/docs.csv", help="Output CSV for page texts")):
+    """
+    Parse all PDFs in input_dir and write page-level text to out_csv.
+    """
+    load_dotenv()
+    n = parse_dir(Path(input_dir), Path(out_csv))
+    typer.secho(f"Wrote {n} page rows to {out_csv}", fg=typer.colors.GREEN)
+
+
+@app.command("chunk")
+def cmd_chunk(docs_csv: Optional[str] = typer.Option("data/docs.csv", help="Input CSV from ingest-pdf"),
+              out_csv: Optional[str] = typer.Option("data/chunks.csv", help="Output CSV of chunks"),
+              chunk_size: Optional[int] = typer.Option(800, help="Chunk size (chars), v1 no overlap")):
+    """
+    Split page text into fixed-size chunks; write to out_csv.
+    """
+    load_dotenv()
+    n = make_chunks(Path(docs_csv), Path(out_csv), chunk_size=chunk_size)
+    typer.secho(f"Wrote {n} chunks to {out_csv}", fg=typer.colors.GREEN)
 
 
 if __name__ == "__main__":
