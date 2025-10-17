@@ -1,0 +1,4 @@
+{"question": "What is the PTO policy?", "gold_chunk_ids": ["company_policy.pdf__p1__c0"], "expected_substrings": ["15 days"]}
+{"question": "How many sick leave days are provided?", "gold_chunk_ids": ["company_policy.pdf__p1__c0"], "expected_substrings": ["10 days"]}
+{"question": "What does GET /v1/users return?", "gold_chunk_ids": ["api_guide.pdf__p1__c0"], "expected_substrings": ["list of users"]}
+{"question": "What is the rate limit?", "gold_chunk_ids": ["api_guide.pdf__p1__c0"], "expected_substrings": ["60 requests/minute"]}

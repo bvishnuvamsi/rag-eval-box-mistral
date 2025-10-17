@@ -16,6 +16,17 @@ import typer  # zero-boilerplate CLI
 from dotenv import load_dotenv  # load .env into env vars
 import httpx  # only for friendly error printing in api-check
 
+from typing import Optional
+
+# import client class (we already fixed relative imports earlier)
+try:
+    from .models.client_mistral import MistralClient
+    from .index.build_faiss import build_and_save as build_index_and_meta
+    from .index.search_faiss import search as faiss_search
+except ImportError:
+    from models.client_mistral import MistralClient
+    from index.build_faiss import build_and_save as build_index_and_meta
+    from index.search_faiss import search as faiss_search
 
 app = typer.Typer(help="RAG Eval Box CLI")
 
@@ -124,6 +135,114 @@ def cmd_chunk(docs_csv: Optional[str] = typer.Option("data/docs.csv", help="Inpu
     load_dotenv()
     n = make_chunks(Path(docs_csv), Path(out_csv), chunk_size=chunk_size)
     typer.secho(f"Wrote {n} chunks to {out_csv}", fg=typer.colors.GREEN)
+
+@app.command("list-embed-models")
+def cmd_list_embed_models():
+    """
+    Shows model IDs that likely serve embeddings (filter: 'embed').
+    Use one of these for --embed-model in build-index/query.
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+    models = client.list_models()
+    embeds = [m for m in models if "embed" in m.lower()]
+    if not embeds:
+        typer.secho("No embedding models visible to this key. You may need a different plan.", fg=typer.colors.YELLOW)
+    else:
+        typer.secho("Embedding-capable models:", fg=typer.colors.GREEN)
+        for m in embeds:
+            typer.echo(f" - {m}")
+
+
+@app.command("build-index")
+def cmd_build_index(chunks_csv: str = typer.Option("data/chunks.csv"),
+                    index_path: str = typer.Option("data/faiss.index"),
+                    meta_csv: str = typer.Option("data/chunk_meta.csv"),
+                    embed_model: str = typer.Option(..., prompt=True, help="Embeddings model ID (see list-embed-models)"),
+                    batch_size: int = typer.Option(64)):
+    """
+    Embed chunks and build a FAISS index + metadata CSV.
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+    n = build_index_and_meta(Path(chunks_csv), Path(index_path), Path(meta_csv), client, embed_model, batch_size=batch_size)
+    typer.secho(f"Indexed {n} chunks -> {index_path} and {meta_csv}", fg=typer.colors.GREEN)
+
+
+@app.command("query")
+def cmd_query(question: str = typer.Argument(...),
+              index_path: str = typer.Option("data/faiss.index"),
+              meta_csv: str = typer.Option("data/chunk_meta.csv"),
+              embed_model: str = typer.Option(..., prompt=True),
+              k: int = typer.Option(5, help="Top-k chunks to return")):
+    """
+    Embed the question, search FAISS, and print top-k chunks with doc/page.
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+    results = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+    if not results:
+        typer.secho("No results.", fg=typer.colors.YELLOW)
+        raise typer.Exit(0)
+    for r in results:
+        typer.secho(f"[{r['rank']}] {r['doc_id']} p{r['page_num']}  (L2={r['score_l2']:.4f})", fg=typer.colors.CYAN)
+        typer.echo(r["text"].strip()[:300] + ("..." if len(r["text"]) > 300 else ""))
+
+
+@app.command("answer")
+def cmd_answer(question: str = typer.Argument(...),
+               index_path: str = typer.Option("data/faiss.index"),
+               meta_csv: str = typer.Option("data/chunk_meta.csv"),
+               embed_model: str = typer.Option(..., prompt=True),
+               chat_model: str = typer.Option("mistral-medium-latest", help="Chat model to use"),
+               k: int = typer.Option(5)):
+    """
+    Retrieve top-k chunks, then call Mistral chat to generate an answer that cites [doc_id pX].
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+    ctx = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+    if not ctx:
+        typer.secho("No retrieval results; cannot answer.", fg=typer.colors.YELLOW)
+        raise typer.Exit(0)
+
+    # Build a minimal, explicit prompt with citations.
+    context_blocks = []
+    for r in ctx:
+        context_blocks.append(f"[{r['doc_id']} p{r['page_num']}] {r['text']}")
+    context_str = "\n\n".join(context_blocks)
+
+    system_msg = {
+        "role": "system",
+        "content": (
+            "You are a precise assistant. Answer using ONLY the CONTEXT. "
+            "Cite sources in square brackets like [doc_id pX]. If the answer is not in context, say you don't know."
+        )
+    }
+    user_msg = {
+        "role": "user",
+        "content": f"QUESTION:\n{question}\n\nCONTEXT:\n{context_str}"
+    }
+
+    answer = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
+    typer.secho("\n=== ANSWER ===", fg=typer.colors.GREEN)
+    typer.echo(answer.strip())
 
 
 if __name__ == "__main__":
