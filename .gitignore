@@ -210,3 +210,6 @@ __pycache__/
 .env
 *.index
 *.parquet
+
+# Data artifacts (scraped/raw/output)
+data/
