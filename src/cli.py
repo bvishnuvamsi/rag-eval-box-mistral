@@ -23,10 +23,17 @@ try:
     from .models.client_mistral import MistralClient
     from .index.build_faiss import build_and_save as build_index_and_meta
     from .index.search_faiss import search as faiss_search
+    from .evals.run_eval import run_retrieval_eval, run_end2end_eval
+    from .ingest.fetch_web import fetch_all
+    from .ingest.html_parse import parse_dir as parse_html_dir
 except ImportError:
     from models.client_mistral import MistralClient
     from index.build_faiss import build_and_save as build_index_and_meta
     from index.search_faiss import search as faiss_search
+    from evals.run_eval import run_retrieval_eval, run_end2end_eval
+    from ingest.fetch_web import fetch_all
+    from ingest.html_parse import parse_dir as parse_html_dir
+
 
 app = typer.Typer(help="RAG Eval Box CLI")
 
@@ -243,6 +250,85 @@ def cmd_answer(question: str = typer.Argument(...),
     answer = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
     typer.secho("\n=== ANSWER ===", fg=typer.colors.GREEN)
     typer.echo(answer.strip())
+
+@app.command("eval-retrieval")
+def cmd_eval_retrieval(
+    labelset: str = typer.Option("src/evals/qa_labelset.jsonl", help="Path to JSONL labelset"),
+    index_path: str = typer.Option("data/faiss.index"),
+    meta_csv: str = typer.Option("data/chunk_meta.csv"),
+    embed_model: str = typer.Option(..., prompt=True),
+    k: int = typer.Option(5),
+):
+    """
+    Evaluate retrieval quality (Recall@k, MRR) over the labelset.
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+
+    out = run_retrieval_eval(Path(labelset), Path(index_path), Path(meta_csv), client, embed_model, k=k)
+
+    # Pretty-print
+    typer.secho("Per-question results:", fg=typer.colors.GREEN)
+    for r in out["rows"]:
+        typer.echo(f"- Q: {r['question']}")
+        typer.echo(f"  retrieved: {r['retrieved']}")
+        typer.echo(f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}")
+    s = out["summary"]
+    typer.secho(f"\nSummary: N={s['n']}  avg_Recall@k={s['avg_Recall@k']:.2f}  avg_MRR={s['avg_MRR']:.2f}", fg=typer.colors.CYAN)
+
+
+@app.command("eval-end2end")
+def cmd_eval_end2end(
+    labelset: str = typer.Option("src/evals/qa_labelset.jsonl"),
+    index_path: str = typer.Option("data/faiss.index"),
+    meta_csv: str = typer.Option("data/chunk_meta.csv"),
+    embed_model: str = typer.Option(..., prompt=True),
+    chat_model: str = typer.Option("mistral-medium-latest"),
+    k: int = typer.Option(5),
+):
+    """
+    End-to-end eval: retrieval + chat answer quality (EM, groundedness).
+    """
+    load_dotenv()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+
+    out = run_end2end_eval(Path(labelset), Path(index_path), Path(meta_csv), client, embed_model, chat_model, k=k)
+
+    typer.secho("Per-question results:", fg=typer.colors.GREEN)
+    for r in out["rows"]:
+        typer.echo(f"- Q: {r['question']}")
+        typer.echo(f"  retrieved: {r['retrieved']}")
+        typer.echo(f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}")
+        typer.echo(f"  EM={r['EM']:.2f}  Grounded={r['Grounded']:.2f}")
+        typer.echo(f"  ANSWER: {r['answer']}\n")
+    s = out["summary"]
+    typer.secho(f"\nSummary: N={s['n']}  avg_EM={s['avg_EM']:.2f}  avg_Grounded={s['avg_Grounded']:.2f}", fg=typer.colors.CYAN)
+
+@app.command("fetch-web")
+def cmd_fetch_web(sources: str = typer.Option("data/real/sources_e.txt", help="One URL per line"),
+                  out_dir: str = typer.Option("data/real/raw", help="Where to save HTML")):
+    """
+    Download curated URLs to local HTML files.
+    """
+    pairs = fetch_all(Path(sources), Path(out_dir))
+    typer.secho(f"Fetched {len(pairs)} pages into {out_dir}", fg=typer.colors.GREEN)
+
+@app.command("ingest-web")
+def cmd_ingest_web(raw_dir: str = typer.Option("data/real/raw"),
+                   out_csv: str = typer.Option("data/real/docs_web.csv")):
+    """
+    Parse local HTML pages into docs CSV (doc_id, page_num=1, text).
+    """
+    n = parse_html_dir(Path(raw_dir), Path(out_csv))
+    typer.secho(f"Wrote {n} rows to {out_csv}", fg=typer.colors.GREEN)
 
 
 if __name__ == "__main__":
