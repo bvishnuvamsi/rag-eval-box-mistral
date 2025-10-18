@@ -208,8 +208,14 @@ __marimo__/
 .venv/
 __pycache__/
 .env
+.env.*
 *.index
 *.parquet
 
+.DS_Store
+*.pyc
+
 # Data artifacts (scraped/raw/output)
 data/
+data/**
+!data/README.md
