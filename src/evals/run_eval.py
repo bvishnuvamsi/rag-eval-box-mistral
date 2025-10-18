@@ -25,13 +25,16 @@ def load_labelset(path: Path) -> List[Dict[str, Any]]:
 def run_retrieval_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
                        client: MistralClient, embed_model: str, k: int = 5) -> Dict[str, Any]:
     labels = load_labelset(labelset_path)
+    meta_rows = _load_meta_rows(meta_csv)
     rows = []
     r_at_k = []
     mrr = []
 
     for item in labels:
         q = item["question"]
-        gold = item["gold_chunk_ids"]
+        #gold = item["gold_chunk_ids"]
+        gold = _resolve_gold_chunks(item, meta_rows)
+
         # retrieve
         hits = faiss_search(index_path, meta_csv, client, embed_model, q, k=k)
         retrieved_ids = [h["chunk_id"] for h in hits]
@@ -68,13 +71,14 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
                      client: MistralClient, embed_model: str, chat_model: str, k: int = 5) -> Dict[str, Any]:
     labels = load_labelset(labelset_path)
     rows = []
-
+    meta_rows = _load_meta_rows(meta_csv)
     ems = []
     grounds = []
 
     for item in labels:
         q = item["question"]
-        gold = item["gold_chunk_ids"]
+        #gold = item["gold_chunk_ids"]
+        gold = _resolve_gold_chunks(item, meta_rows)
         expect = item.get("expected_substrings", [])
 
         # Retrieve
@@ -127,6 +131,40 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
     }
     return {"rows": rows, "summary": summary}
 
+def _load_meta_rows(meta_csv: Path) -> list[dict]:
+    import csv
+    rows = []
+    with meta_csv.open("r", encoding="utf-8") as f:
+        r = csv.DictReader(f)
+        for row in r:
+            rows.append({
+                "chunk_id": row["chunk_id"],
+                "doc_id": row["doc_id"],
+                "page_num": int(row["page_num"]),
+                "text": row["text"],
+            })
+    return rows
+
+def _resolve_gold_chunks(item: dict, meta_rows: list[dict]) -> list[str]:
+    # If explicit chunk ids exist, use them.
+    if item.get("gold_chunk_ids"):
+        return item["gold_chunk_ids"]
+
+    # Expand doc-level ids if provided.
+    out_ids = set()
+    doc_patterns = [p.lower() for p in item.get("gold_doc_ids", []) + item.get("gold_doc_patterns", [])]
+    text_snippets = [s.lower() for s in item.get("gold_text_snippets", [])]
+
+    for r in meta_rows:
+        ok = True
+        if doc_patterns:
+            ok = any(p in r["doc_id"].lower() for p in doc_patterns)
+        if ok and text_snippets:
+            ok = any(s in r["text"].lower() for s in text_snippets)
+        if ok and (doc_patterns or text_snippets):
+            out_ids.add(r["chunk_id"])
+
+    return list(out_ids)
 
 
 
