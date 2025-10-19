@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
+from src.index.build_faiss import build_and_save
 
 
 import os
@@ -329,6 +330,31 @@ def cmd_ingest_web(raw_dir: str = typer.Option("data/real/raw"),
     """
     n = parse_html_dir(Path(raw_dir), Path(out_csv))
     typer.secho(f"Wrote {n} rows to {out_csv}", fg=typer.colors.GREEN)
+
+@app.command("build-faiss")
+def cmd_build_faiss(
+    chunks_csv: str = typer.Option(..., "--chunks-csv", help="CSV with columns: chunk_id, doc_id, page_num, text"),
+    index_path: str = typer.Option(..., "--index-path", help="Output FAISS index path"),
+    meta_csv: str = typer.Option(..., "--meta-csv", help="Output metadata CSV path"),
+    embed_model: str = typer.Option(..., "--embed-model", help="Embedding model id (e.g., mistral-embed-2312)"),
+    batch_size: int = typer.Option(64, "--batch-size", "-b", help="Embedding batch size"),
+):
+    """Build a FAISS index from chunks CSV, writing index + meta. Uses the embedding cache."""
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    client = MistralClient(api_key=key)
+
+    n = build_and_save(
+        Path(chunks_csv),
+        Path(index_path),
+        Path(meta_csv),
+        client,
+        embed_model,
+        batch_size=batch_size,
+    )
+    typer.secho(f"Built index with {n} chunks -> {index_path}", fg=typer.colors.GREEN)
 
 
 if __name__ == "__main__":

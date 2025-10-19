@@ -219,3 +219,7 @@ __pycache__/
 data/
 data/**
 !data/README.md
+
+# Embedding cache
+/data/*.sqlite
+/tmp/emb_cache.sqlite
