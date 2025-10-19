@@ -244,7 +244,7 @@ rm -f "/tmp/emb_cache.sqlite"*
 Ctrl + C  # stop immediately.
 Ctrl + Z  #suspend; then 
 kill %1   #to terminate the suspended job
-``sh
+```
 
 ## 9) CLI Reference (implemented in src/cli.py)
 
@@ -338,3 +338,24 @@ python -m src.cli eval-end2end \
   --chat-model mistral-medium-latest \
   --k 5
 ```
+
+## 13)Dataset & Source References
+
+This project uses public web documentation for small-scale RAG evaluation. All content is © the respective owners and used here for educational/testing purposes only. See each site’s terms for reuse policies.
+
+Stripe API documentation
+* Stripe API Reference (root) — https://docs.stripe.com/api
+    * Payment Intents API — https://docs.stripe.com/api/payment_intents
+    * Customers API — https://docs.stripe.com/api/customers
+    * Metadata — https://docs.stripe.com/api/metadata
+
+Google Engineering Practices
+* Overview (Code Review: Introduction & Index) — https://google.github.io/eng-practices/review/
+* How To Do A Code Review (for reviewers) — https://google.github.io/eng-practices/review/reviewer/
+* The CL Author’s Guide (for authors) — https://google.github.io/eng-practices/review/developer/
+
+Provenance: Original URLs listed in data/real/sources_e.txt; downloaded HTML stored in data/real/raw/; parsed text to data/real/docs_web.csv; chunked to data/real/chunks_web.csv.
+
+Usage notes
+* We store only small text chunks for retrieval evaluation (see data/real/chunk_meta_web.csv).
+* If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
