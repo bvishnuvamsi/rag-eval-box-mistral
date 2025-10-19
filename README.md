@@ -214,3 +214,127 @@ Flexible loader: the eval code tries several common field names (answers, gold_d
 * The system prompt forces the model to copy one of those tokens exactly.
 * A post-check appends a token if the model forgot one.
 * Groundedness metric = 1.0 iff at least one exact token is present.
+
+## 8) Troubleshooting
+
+SQLite OperationalError: disk I/O error or no such column: text_hash
+* Remove any old cache and use /tmp:
+```sh
+rm -f /tmp/emb_cache.sqlite data/emb_cache.sqlite
+export EMB_CACHE_PATH=/tmp/emb_cache.sqlite
+```
+
+* 429 Too Many Requests
+    * Slow down:
+```sh
+export MISTRAL_RATE_LIMIT_SECONDS=1
+```
+
+* zsh “command not found: #”
+    * Don’t paste # lines into zsh directly; they’re comments. Remove them or put them on their own line.
+
+* zsh “no matches found: /tmp/emb_cache.sqlite”*
+    * Quote globs:
+```sh
+rm -f "/tmp/emb_cache.sqlite"*
+```
+
+* Stop a running command
+```sh
+Ctrl + C  # stop immediately.
+Ctrl + Z  #suspend; then 
+kill %1   #to terminate the suspended job
+``sh
+
+## 9) CLI Reference (implemented in src/cli.py)
+
+```sh
+ping                            # env + FAISS sanity
+api-check                       # calls /v1/models; shows model IDs
+list-embed-models               # filters visible models for "embed"
+build-faiss                     # build FAISS from chunks CSV (uses cache)
+query                           # top-k retrieval
+answer                          # RAG answer w/ strict bracket citations
+eval-retrieval                  # retrieval metrics only
+eval-end2end                    # retrieval + EM + groundedness
+make-seed                       # generate tiny PDFs for demo
+ingest-pdf                      # parse PDFs -> docs.csv
+chunk                           # split page text -> chunks.csv
+fetch-web                       # download curated URLs
+ingest-web                      # parse HTML -> docs_web.csv
+```
+Common Flags
+* --embed-model mistral-embed-2312
+* --chat-model mistral-medium-latest
+* --index-path data/real/faiss_web.index
+* --meta-csv data/real/chunk_meta_web.csv
+* --k 5
+
+## 10) Why you’re seeing the cache logs
+
+This project includes a tiny SQLite embedding cache so repeated queries are instant:
+
+* On first run you’ll see misses=1, then hits=1 on the second run.
+* File path is EMB_CACHE_PATH (default: data/emb_cache.sqlite, we recommend /tmp/emb_cache.sqlite).
+
+## 11) Repo layout (key bits)
+```sh
+src/
+  cli.py                     # all commands live here
+  models/client_mistral.py   # minimal Mistral HTTP client
+  index/
+    build_faiss.py           # build_and_save()
+    search_faiss.py          # FAISS search (+ cached embed calls)
+    emb_cache.py             # sqlite cache helpers
+  evals/
+    run_eval.py              # retrieval + end-to-end eval helpers
+    qa_labelset_eng.jsonl    # sample labelset
+  ingest/
+    fetch_web.py             # download URLs
+    html_parse.py            # parse HTML to CSV
+    make_seed_pdfs.py        # tiny demo PDFs
+    pdf_parse.py             # parse PDFs to CSV
+    chunkers.py              # fixed-size chunking
+data/
+  real/                      # prepared dataset & outputs
+```
+
+## 12) Example: one-liner quickstart (copy/paste)
+```sh
+# 1) Env
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+echo 'MISTRAL_API_KEY=YOUR_KEY' > .env
+export EMB_CACHE_PATH=/tmp/emb_cache.sqlite
+export MISTRAL_RATE_LIMIT_SECONDS=1
+
+# 2) Build from provided web chunks
+python -m src.cli build-faiss \
+  --embed-model mistral-embed-2312 \
+  --chunks-csv data/real/chunks_web.csv \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv
+
+# 3) Query & Answer
+python -m src.cli query "What is a PaymentIntent used for?" \
+  --embed-model mistral-embed-2312 \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv \
+  --k 5
+
+python -m src.cli answer "What does GET /v1/customers return?" \
+  --embed-model mistral-embed-2312 \
+  --chat-model mistral-medium-latest \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv \
+  --k 5
+
+# 4) End-to-end eval
+python -m src.cli eval-end2end \
+  --embed-model mistral-embed-2312 \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv \
+  --labelset src/evals/qa_labelset_eng.jsonl \
+  --chat-model mistral-medium-latest \
+  --k 5
+```
