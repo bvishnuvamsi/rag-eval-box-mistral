@@ -524,3 +524,37 @@ for SPLIT in dev test; do
   done
 done
 ```
+
+## Summary (dev N=17, test N=8)
+
+- Retrieval is strong:
+  - Dev: Recall@k hits 0.94 at k=3 and 1.00 by k≥5.
+  - Test: Recall@k is 1.00 already at k=3.
+    - Increasing k past 5 doesn’t buy coverage; it can even hurt downstream grounding.
+
+- Answer quality is similar across models:
+  - F1 clusters in the 0.20–0.25 range for both mistral-large-latest and mistral-medium-latest.
+  - SemScore is stable around 0.79–0.80 for all settings.
+
+- Grounding & citation behavior:
+  - On dev, mistral-medium-latest tends to keep SentGrounded/Grounded higher as k grows (e.g., k=5 Medium: SentG 0.88 / Gnd 0.76), while Large degrades at k=8 (SentG 0.77, Gnd 0.59), suggesting context overload.
+  - On test, Large @ k=3 shows perfect grounding (SentG 1.00 / Gnd 1.00), but both models converge to 0.94/0.88 by k=5–8.
+
+- Best single points (by F1):
+  - Dev: Large @ k=8 0.25, Medium @ k=5 0.25 (tie; Medium keeps better grounding).
+  - Test: Medium @ k=5 0.23 (highest), with others close (0.21–0.22).
+
+## Conclusion / Recommendation
+
+- Default config: use k=3. It delivers near-max retrieval with less context noise and equal or better grounding than larger k.
+- Model choice: mistral-medium-latest is as accurate as large on this labelset and often better grounded at higher k, making it a solid cost-efficient default.
+- If you must pick one “best dev” point: Medium @ k=5 (F1 0.25, Sem 0.80, SentG 0.88, Gnd 0.76) balances output quality and citations well.
+- If you want strongest test grounding with minimal context: Large @ k=3 (SentG 1.00, Gnd 1.00), though F1 is similar to Medium.
+
+## Notes / Next steps
+
+- The gap between high retrieval and modest F1/EM suggests generation-side tweaks could help:
+  - Tighten the system prompt to “quote or paraphrase only from cited spans; answer in one factual sentence when possible”.
+  - Add a short answer template (e.g., “Answer: …\nSources: [doc p#]”).
+  - Consider re-ranking retrieved chunks or lowering k to reduce dilution.
+- The test set is small (N=8), so treat per-row differences as directional rather than definitive.
