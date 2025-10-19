@@ -263,14 +263,17 @@ def cmd_answer(
         ),
     }
     user_msg = {
-        "role": "user",
-        "content": (
-            f"QUESTION:\n{question}\n\n"
-            f"CONTEXT:\n{context_str}\n\n"
-            f"Acceptable citation tokens (copy one EXACTLY): {acceptable}\n"
-            "Write a short, direct answer (1–3 sentences). Include at least one token."
+    "role": "user",
+    "content": (
+        f"QUESTION:\n{question}\n\n"
+        f"CONTEXT:\n{context_str}\n\n"
+        f"Acceptable citation tokens (copy EXACTLY): {acceptable}\n"
+        "Write a short answer of 1–2 sentences. "
+        "Append one bracket token to the END of **every sentence**. "
+        "Do not invent tokens; only use tokens shown above."
         ),
     }
+
 
     raw = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
     answer = raw.strip()
@@ -319,24 +322,35 @@ def cmd_eval_end2end(
     k: int = typer.Option(5),
 ):
     """
-    End-to-end eval: retrieval + chat answer quality (EM + sentence-level groundedness),
-    using the same strict token-citation prompt as `answer`.
+    End-to-end eval: retrieval + answer quality with
+    - EM (substring proxy)
+    - F1 (token-level, SQuAD-style)
+    - SemScore (embedding cosine vs gold)
+    - Sentence-level groundedness (fraction of sentences with a valid token)
+    - Answer-level groundedness (all sentences grounded)
+    Uses the same strict token-citation prompt as `answer` (no post-append).
     """
-    import os, json, re
+    import os, json, re, math
     from pathlib import Path
     from dotenv import load_dotenv
     from src.models.client_mistral import MistralClient
     from src.index.search_faiss import search as faiss_search
+    # optional cache for semantic scoring
+    try:
+        from src.index.emb_cache import EmbeddingCache, get_or_embed
+    except Exception:
+        EmbeddingCache = None
+        get_or_embed = None
 
-    # -------- helpers --------
+    # ---------------- helpers ----------------
     SENT_SPLIT_RE = re.compile(r"(?<=[\.\!\?])\s+|\n+")
+    WORD_RE = re.compile(r"\w+", re.UNICODE)
+
     def split_sentences(text: str) -> list[str]:
-        text = (text or "").strip()
-        if not text:
+        t = (text or "").strip()
+        if not t:
             return []
-        # keep short sentences but drop empty artifacts
-        parts = [p.strip() for p in SENT_SPLIT_RE.split(text) if p.strip()]
-        return parts
+        return [p.strip() for p in SENT_SPLIT_RE.split(t) if p.strip()]
 
     def sentence_groundedness(answer: str, valid_tokens: list[str]) -> tuple[float, int]:
         """
@@ -347,16 +361,87 @@ def cmd_eval_end2end(
         sents = split_sentences(answer)
         if not sents:
             return 0.0, 0
-        grounded_count = 0
-        for s in sents:
-            if any(tok in s for tok in valid_tokens):
-                grounded_count += 1
+        grounded_count = sum(1 for s in sents if any(tok in s for tok in valid_tokens))
         frac = grounded_count / len(sents)
         all_flag = 1 if grounded_count == len(sents) else 0
         return frac, all_flag
 
     def _canon_text(s: str) -> str:
         return re.sub(r"\s+", " ", (s or "")).strip().lower()
+
+    def tokenize(s: str) -> list[str]:
+        return [w for w in WORD_RE.findall((s or "").lower()) if w]
+
+    def f1_max(pred: str, gold_list: list[str]) -> float:
+        """
+        Token-level F1 vs each gold; take the max.
+        """
+        ptoks = tokenize(pred)
+        if not gold_list or not ptoks:
+            return 0.0
+        best = 0.0
+        for g in gold_list:
+            gtoks = tokenize(g)
+            if not gtoks:
+                continue
+            # overlap
+            common = {}
+            for t in ptoks:
+                common[t] = min(ptoks.count(t), gtoks.count(t))
+            overlap = sum(common.values())
+            if overlap == 0:
+                continue
+            precision = overlap / len(ptoks)
+            recall = overlap / len(gtoks)
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+            if f1 > best:
+                best = f1
+        return best
+
+    def cosine(a: list[float], b: list[float]) -> float:
+        if not a or not b or len(a) != len(b):
+            return 0.0
+        dot = sum(x * y for x, y in zip(a, b))
+        na = math.sqrt(sum(x * x for x in a))
+        nb = math.sqrt(sum(y * y for y in b))
+        if na == 0.0 or nb == 0.0:
+            return 0.0
+        return dot / (na * nb)
+
+    def embed_texts(client: MistralClient, model: str, texts: list[str]) -> list[list[float]]:
+        """
+        Embeds texts using Mistral embeddings. Uses on-disk cache if available.
+        """
+        # Use the same cache path your pipeline already uses (env or default).
+        cache_path = Path(os.getenv("EMB_CACHE_PATH", "data/emb_cache.sqlite"))
+        if EmbeddingCache and get_or_embed:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with EmbeddingCache(cache_path) as cache:
+                embs, _, _ = get_or_embed(
+                    cache=cache,
+                    model=model,
+                    texts=texts,
+                    embed_fn=lambda xs: client.embed(model=model, inputs=xs),
+                )
+            return embs
+        # Fallback without cache
+        return client.embed(model=model, inputs=texts)
+
+    def semantic_score_max(client: MistralClient, model: str, pred: str, gold_list: list[str]) -> float:
+        """
+        Max cosine similarity of pred vs any gold answer.
+        """
+        gold_list = [g for g in gold_list if (g or "").strip()]
+        if not gold_list or not (pred or "").strip():
+            return 0.0
+        # batch embed: pred + golds
+        texts = [pred] + gold_list
+        vecs = embed_texts(client, model, texts)
+        pv = vecs[0]
+        best = 0.0
+        for gv in vecs[1:]:
+            best = max(best, cosine(pv, gv))
+        return best
 
     ANSWER_KEYS = [
         "answers","answer","expected","gold_answers","gold_answer",
@@ -454,7 +539,7 @@ def cmd_eval_end2end(
             return 0.0, 0.0
         return 1.0, 1.0 / hit_rank
 
-    # -------- auth / client --------
+    # ---------------- auth / client ----------------
     load_dotenv()
     key = os.getenv("MISTRAL_API_KEY")
     if not key:
@@ -462,10 +547,10 @@ def cmd_eval_end2end(
         raise typer.Exit(1)
     client = MistralClient(api_key=key)
 
-    # -------- run --------
+    # ---------------- run ----------------
     label_items = _load_labelset(Path(labelset))
     rows = []
-    sum_em = sum_sent_grounded = sum_ans_grounded = sum_recall = sum_mrr = 0.0
+    sum_em = sum_f1 = sum_sem = sum_sent_grounded = sum_ans_grounded = sum_recall = sum_mrr = 0.0
 
     for ex in label_items:
         question = ex["question"]
@@ -504,20 +589,26 @@ def cmd_eval_end2end(
             "content": (
                 f"QUESTION:\n{question}\n\n"
                 f"CONTEXT:\n{context_str}\n\n"
-                f"Acceptable citation tokens (copy one EXACTLY): {acceptable}\n"
-                "Write a short, direct answer (1–3 sentences). Include at least one token."
+                f"Acceptable citation tokens (copy EXACTLY): {acceptable}\n"
+                "Write a short answer of 1–2 sentences. "
+                "Append one bracket token to the END of **every sentence**. "
+                "Do not invent tokens; only use tokens shown above."
             ),
         }
+
 
         pred = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0).strip()
 
         # metrics
         rec, mrr = _recall_mrr(retrieved_doc_ids, retrieved_chunk_ids, gold_ids)
         em = _exact_match(pred, ex["answers"])
+        f1 = f1_max(pred, ex["answers"])
+        sem = semantic_score_max(client, embed_model, pred, ex["answers"])
 
         sent_frac, all_flag = sentence_groundedness(pred, tokens)
 
-        sum_recall += rec; sum_mrr += mrr; sum_em += em
+        sum_recall += rec; sum_mrr += mrr
+        sum_em += em; sum_f1 += f1; sum_sem += sem
         sum_sent_grounded += sent_frac; sum_ans_grounded += float(all_flag)
 
         rows.append({
@@ -526,26 +617,34 @@ def cmd_eval_end2end(
             "Recall@k": rec,
             "MRR": mrr,
             "EM": em,
+            "F1": f1,
+            "SemScore": sem,
             "SentGrounded": sent_frac,
             "Grounded": float(all_flag),
             "answer": pred,
         })
 
-    # -------- print --------
+    # ---------------- print ----------------
     typer.secho("Per-question results:", fg=typer.colors.GREEN)
     for r in rows:
         typer.echo(f"- Q: {r['question']}")
         typer.echo(f"  retrieved: {r['retrieved']}")
-        typer.echo(f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}")
-        typer.echo(f"  EM={r['EM']:.2f}  SentGrounded={r['SentGrounded']:.2f}  Grounded={r['Grounded']:.2f}")
+        typer.echo(
+            f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}  "
+            f"EM={r['EM']:.2f}  F1={r['F1']:.2f}  SemScore={r['SemScore']:.2f}  "
+            f"SentGrounded={r['SentGrounded']:.2f}  Grounded={r['Grounded']:.2f}"
+        )
         typer.echo(f"  ANSWER: {r['answer']}\n")
 
     n = max(len(rows), 1)
     typer.secho(
-        f"\nSummary: N={n}  avg_Recall@k={sum_recall/n:.2f}  avg_MRR={sum_mrr/n:.2f}  "
-        f"avg_EM={sum_em/n:.2f}  avg_SentGrounded={sum_sent_grounded/n:.2f}  avg_Grounded={sum_ans_grounded/n:.2f}",
+        f"\nSummary: N={n}  "
+        f"avg_Recall@k={sum_recall/n:.2f}  avg_MRR={sum_mrr/n:.2f}  "
+        f"avg_EM={sum_em/n:.2f}  avg_F1={sum_f1/n:.2f}  avg_SemScore={sum_sem/n:.2f}  "
+        f"avg_SentGrounded={sum_sent_grounded/n:.2f}  avg_Grounded={sum_ans_grounded/n:.2f}",
         fg=typer.colors.CYAN,
     )
+
 
 
 

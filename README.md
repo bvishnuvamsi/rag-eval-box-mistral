@@ -360,3 +360,62 @@ Usage notes
 * We store only small text chunks for retrieval evaluation (see data/real/chunk_meta_web.csv).
 
 > If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
+
+
+## 14)Results: Model × k ablation (dev set)
+
+All runs use `--embed-model mistral-embed-2312`, temperature 0.0, strict sentence-level groundedness (no post-hoc citation appends).
+```sh
+
+| Model                | k | EM   | F1   | SemScore | SentGrounded | Grounded | Recall@k | MRR  |
+|----------------------|---|------|------|----------|--------------|----------|----------|------|
+| mistral-large-latest | 3 | 0.00 | 0.30 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-large-latest | 5 | 0.00 | 0.28 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-large-latest | 8 | 0.00 | 0.24 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-medium-2508  | 3 | 0.00 | 0.30 | 0.82     | 0.88         | 0.75     | 1.00     | 1.00 |
+| mistral-medium-2508  | 5 | 0.00 | 0.30 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-medium-2508  | 8 | 0.00 | 0.29 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-medium-latest| 3 | 0.00 | 0.35 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-medium-latest| 5 | 0.00 | 0.28 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
+| mistral-medium-latest| 8 | 0.00 | 0.25 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
+
+**Default choice (for this corpus):** `mistral-medium-latest` with `k=3` (best F1 = 0.35) and fully grounded.
+
+```
+**Notes.**
+- EM is a strict substring proxy; we report **F1** and **SemScore** as primary answer-quality signals.
+- **Groundedness** is computed at the **sentence** level: each sentence must include at least one exact bracket token present in the retrieved context. We never append citations post-hoc.
+
+
+### How to reproduce the ablation
+```bash
+for K in 3 5 8; do
+  python -m src.cli eval-end2end \
+    --embed-model mistral-embed-2312 \
+    --chat-model mistral-large-latest \
+    --index-path data/real/faiss_web.index \
+    --meta-csv data/real/chunk_meta_web.csv \
+    --labelset src/evals/qa_labelset_eng.jsonl \
+    --k $K
+done
+
+for K in 3 5 8; do
+  python -m src.cli eval-end2end \
+    --embed-model mistral-embed-2312 \
+    --chat-model mistral-medium-2508 \
+    --index-path data/real/faiss_web.index \
+    --meta-csv data/real/chunk_meta_web.csv \
+    --labelset src/evals/qa_labelset_eng.jsonl \
+    --k $K
+done
+
+for K in 3 5 8; do
+  python -m src.cli eval-end2end \
+    --embed-model mistral-embed-2312 \
+    --chat-model mistral-medium-latest \
+    --index-path data/real/faiss_web.index \
+    --meta-csv data/real/chunk_meta_web.csv \
+    --labelset src/evals/qa_labelset_eng.jsonl \
+    --k $K
+done
+```
