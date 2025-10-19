@@ -451,20 +451,28 @@ README.md
 
 ```sh
 #### dev (N=17)
-| k | Large F1 | Large Sem | Large SentG | Large Gnd | Medium F1 | Medium Sem | Medium SentG | Medium Gnd |
-|---| -------- | ----------|-------------|-----------|-----------|------------|--------------|------------|
-| 3 |   0.24   |    0.80   |     0.85    |    0.71   |    0.24   |    0.80    |     0.85     |    0.71    |
-| 5 |   0.21   |    0.79   |     0.83    |    0.71   |    0.25   |    0.80    |     0.88     |    0.76    |
-| 8 |   0.25   |    0.80   |     0.77    |    0.59   |    0.23   |    0.80    |     0.86     |    0.71    |
+| k | Model                 | F1   | Sem  | SentG | Gnd  |
+|---|-----------------------|------|------|-------|------|
+| 3 | mistral-large-latest  | 0.24 | 0.80 | 0.85  | 0.71 |
+| 3 | mistral-medium-latest | 0.24 | 0.80 | 0.85  | 0.71 |
+| 5 | mistral-large-latest  | 0.21 | 0.79 | 0.83  | 0.71 |
+| 5 | mistral-medium-latest | 0.25 | 0.80 | 0.88  | 0.76 |
+| 8 | mistral-large-latest  | 0.25 | 0.80 | 0.77  | 0.59 |
+| 8 | mistral-medium-latest | 0.23 | 0.80 | 0.86  | 0.71 |
 
 #### test (N=8)
-| k | Large F1 | Large Sem | Large SentG | Large Gnd | Medium F1 | Medium Sem | Medium SentG | Medium Gnd |
-|---| -------- | ----------|-------------|-----------|-----------|------------|--------------|------------|
-| 3 |   0.21   |    0.79   |     1.00    |    1.00   |    0.20   |    0.79    |     0.94     |    0.88    |
-| 5 |   0.21   |    0.79   |     0.94    |    0.88   |    0.23   |    0.80    |     0.88     |    0.75    |
-| 8 |   0.22   |    0.80   |     0.94    |    0.88   |    0.22   |    0.80    |     0.94     |    0.88    |
+| k | Model                 | F1   | Sem  | SentG | Gnd  |
+|---|-----------------------|------|------|-------|------|
+| 3 | mistral-large-latest  | 0.21 | 0.79 | 1.00  | 1.00 |
+| 3 | mistral-medium-latest | 0.20 | 0.79 | 0.94  | 0.88 |
+| 5 | mistral-large-latest  | 0.21 | 0.79 | 0.94  | 0.88 |
+| 5 | mistral-medium-latest | 0.23 | 0.80 | 0.88  | 0.75 |
+| 8 | mistral-large-latest  | 0.22 | 0.80 | 0.94  | 0.88 |
+| 8 | mistral-medium-latest | 0.22 | 0.80 | 0.94  | 0.88 |
 
 > **Metric notes.** *Sem* = semantic similarity; *SentG* = fraction of answer sentences with grounded citations; *Gnd* = answer-level groundedness.
+
+Outputs are written to `evals/out/*.txt`.
 ```
 ```sh
 ### Retrieval-only
