@@ -240,7 +240,7 @@ def cmd_answer(
     cite_tokens: list[str] = []
     seen: set[str] = set()
     for r in ctx:
-        did = r["doc_id"]                 # keep EXACT value from CSV (incl. trailing underscore if present)
+        did = r["doc_id"]                 # keep EXACT value from CSV
         token = f"[{did} p{r['page_num']}]"
         if token not in seen:
             cite_tokens.append(token)
@@ -275,13 +275,9 @@ def cmd_answer(
     raw = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
     answer = raw.strip()
 
-    # 4) Post-guard: ensure at least one EXACT token is present; if not, append one.
-    if cite_tokens and not any(tok in answer for tok in cite_tokens):
-        answer = f"{answer}\n\n{cite_tokens[0]}"
-
+    # IMPORTANT: no post-append. If model forgot a token, we show it as-is.
     typer.secho("\n=== ANSWER ===", fg=typer.colors.GREEN)
     typer.echo(answer)
-
 
 @app.command("eval-retrieval")
 def cmd_eval_retrieval(
@@ -323,7 +319,7 @@ def cmd_eval_end2end(
     k: int = typer.Option(5),
 ):
     """
-    End-to-end eval: retrieval + chat answer quality (EM, groundedness),
+    End-to-end eval: retrieval + chat answer quality (EM + sentence-level groundedness),
     using the same strict token-citation prompt as `answer`.
     """
     import os, json, re
@@ -333,48 +329,47 @@ def cmd_eval_end2end(
     from src.index.search_faiss import search as faiss_search
 
     # -------- helpers --------
-    def _normalize_text(s: str) -> str:
-        # lower, drop markdown/code/punct so EM isn't broken by backticks/asterisks/commas
-        return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+    SENT_SPLIT_RE = re.compile(r"(?<=[\.\!\?])\s+|\n+")
+    def split_sentences(text: str) -> list[str]:
+        text = (text or "").strip()
+        if not text:
+            return []
+        # keep short sentences but drop empty artifacts
+        parts = [p.strip() for p in SENT_SPLIT_RE.split(text) if p.strip()]
+        return parts
 
-    def _norm_id(s: str) -> str:
-        s = (s or "").strip().lower()
-        s = re.sub(r"\s+", "", s)
-        s = re.sub(r"_{3,}", "__", s)
-        s = re.sub(r"_+$", "", s)
-        return s
+    def sentence_groundedness(answer: str, valid_tokens: list[str]) -> tuple[float, int]:
+        """
+        Returns (sent_frac, all_grounded_flag).
+        sent_frac = fraction of sentences containing >=1 valid token.
+        all_grounded_flag = 1 only if every sentence is grounded (and answer not empty).
+        """
+        sents = split_sentences(answer)
+        if not sents:
+            return 0.0, 0
+        grounded_count = 0
+        for s in sents:
+            if any(tok in s for tok in valid_tokens):
+                grounded_count += 1
+        frac = grounded_count / len(sents)
+        all_flag = 1 if grounded_count == len(sents) else 0
+        return frac, all_flag
 
-    def _chunk_root(chunk_id: str) -> str:
-        return re.sub(r"__p\d+__c\d+$", "", _norm_id(chunk_id))
+    def _canon_text(s: str) -> str:
+        return re.sub(r"\s+", " ", (s or "")).strip().lower()
 
-    # EM: exact substring OR keyword coverage (robust to minor phrasing)
-    _STOP = set("a an the is are was were be been being of to for in on with and or if then else as at by from into over after before about under between without within not do does did done this that these those it its their your our".split())
-
-    def _keyword_coverage(pred_norm: str, gold_norm: str) -> float:
-        gold_words = [w for w in gold_norm.split() if len(w) > 3 and w not in _STOP]
-        if not gold_words:
-            return 0.0
-        hits = sum(1 for w in gold_words if w in pred_norm)
-        return hits / max(1, len(gold_words))
-
-    def _em_from_answers(pred: str, answers: list[str]) -> float:
-        if not answers:
-            return 0.0
-        p = _normalize_text(pred)
-        for a in answers:
-            a_norm = _normalize_text(a)
-            # 1) exact normalized substring
-            if a_norm and a_norm in p:
-                return 1.0
-            # 2) fallback: keyword coverage >= 0.6
-            if _keyword_coverage(p, a_norm) >= 0.6:
-                return 1.0
-        return 0.0
-
-    ANSWER_KEYS = ["answers","answer","expected","gold_answers","gold_answer","targets","target","labels","label"]
-    GOLD_KEYS = ["gold_doc_ids","gold","docs","doc_ids","gold_docs","gold_chunks","gold_chunk_ids","gold_chunk_prefixes","gold_ids","retrieval_ids","gold_retrieval_ids","positive_ids"]
+    ANSWER_KEYS = [
+        "answers","answer","expected","gold_answers","gold_answer",
+        "targets","target","labels","label"
+    ]
+    GOLD_KEYS = [
+        "gold_doc_ids","gold","docs","doc_ids","gold_docs",
+        "gold_chunks","gold_chunk_ids","gold_chunk_prefixes","gold_ids",
+        "retrieval_ids","gold_retrieval_ids","positive_ids"
+    ]
 
     def _auto_find_gold(obj: dict) -> list[str]:
+        """Fallback: scan all fields for values that look like our ids."""
         out = []
         pat = re.compile(r"docs\.[\w\.-]+__\w+(?:__\w+)*(?:__p\d+__c\d+)?", re.I)
         for v in obj.values():
@@ -393,6 +388,7 @@ def cmd_eval_end2end(
                 line = line.strip()
                 if not line: continue
                 ex = json.loads(line)
+
                 q = ex.get("question") or ex.get("q") or ex.get("prompt")
                 if not q: continue
 
@@ -403,7 +399,6 @@ def cmd_eval_end2end(
                         answers = v if isinstance(v, list) else [v]
                         break
                 if not answers:
-                    # fallback to any field containing 'answer'
                     for k, v in ex.items():
                         if "answer" in k.lower() and isinstance(v, (str, list)):
                             answers = v if isinstance(v, list) else [v]
@@ -421,13 +416,31 @@ def cmd_eval_end2end(
                 items.append({"question": q, "answers": answers, "gold": gold})
         return items
 
+    def _exact_match(pred: str, gold_answers: list[str]) -> float:
+        if not gold_answers: return 0.0
+        p = _canon_text(pred)
+        for a in gold_answers:
+            aa = _canon_text(a)
+            if aa and aa in p:
+                return 1.0
+        return 0.0
+
+    def _norm_id(s: str) -> str:
+        s = (s or "").strip().lower()
+        s = re.sub(r"\s+", "", s)
+        s = re.sub(r"_{3,}", "__", s)   # collapse ___ to __
+        s = re.sub(r"_+$", "", s)       # drop trailing underscores
+        return s
+
+    def _chunk_root(chunk_id: str) -> str:
+        return re.sub(r"__p\d+__c\d+$", "", _norm_id(chunk_id))
+
     def _recall_mrr(retrieved_doc_ids: list[str], retrieved_chunk_ids: list[str], gold_ids: list[str]) -> tuple[float, float]:
         if not gold_ids:
             return 0.0, 0.0
         docs = [_norm_id(x) for x in retrieved_doc_ids]
         roots = [_chunk_root(x) for x in retrieved_chunk_ids]
         gold = [_norm_id(x) for x in gold_ids]
-
         hit_rank = None
         for i in range(len(retrieved_doc_ids)):
             d = docs[i]; r = roots[i]
@@ -452,12 +465,11 @@ def cmd_eval_end2end(
     # -------- run --------
     label_items = _load_labelset(Path(labelset))
     rows = []
-    sum_em = sum_grounded = sum_recall = sum_mrr = 0.0
+    sum_em = sum_sent_grounded = sum_ans_grounded = sum_recall = sum_mrr = 0.0
 
     for ex in label_items:
         question = ex["question"]
         gold_ids = ex["gold"]
-
         if gold_ids:
             typer.secho(f"[gold] {question} -> {gold_ids}", fg=typer.colors.BLUE)
         else:
@@ -468,7 +480,7 @@ def cmd_eval_end2end(
         retrieved_chunk_ids = [r["chunk_id"] for r in ctx]
         retrieved_doc_ids = [r["doc_id"] for r in ctx]
 
-        # strict token-citation prompt (same as `answer`), ask for PLAIN TEXT to help EM
+        # strict token-citation prompt (same as `answer`)
         tokens, blocks, seen = [], [], set()
         for r in ctx:
             tok = f"[{r['doc_id']} p{r['page_num']}]"
@@ -482,7 +494,6 @@ def cmd_eval_end2end(
             "role": "system",
             "content": (
                 "You are a precise RAG assistant. Use ONLY the CONTEXT.\n"
-                "Answer in plain text (no Markdown or code formatting).\n"
                 "Cite sources by copying EXACTLY one or more of the bracket tokens present in CONTEXT "
                 "in the form [doc_id pX]. Do NOT include any URLs. "
                 "If the answer is not in CONTEXT, reply exactly: I don't know."
@@ -499,15 +510,15 @@ def cmd_eval_end2end(
         }
 
         pred = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0).strip()
-        if tokens and not any(t in pred for t in tokens):
-            pred = f"{pred}\n\n{tokens[0]}"
 
         # metrics
         rec, mrr = _recall_mrr(retrieved_doc_ids, retrieved_chunk_ids, gold_ids)
-        em = _em_from_answers(pred, ex["answers"])
-        grounded = 1.0 if any(t in pred for t in tokens) else 0.0
+        em = _exact_match(pred, ex["answers"])
 
-        sum_recall += rec; sum_mrr += mrr; sum_em += em; sum_grounded += grounded
+        sent_frac, all_flag = sentence_groundedness(pred, tokens)
+
+        sum_recall += rec; sum_mrr += mrr; sum_em += em
+        sum_sent_grounded += sent_frac; sum_ans_grounded += float(all_flag)
 
         rows.append({
             "question": question,
@@ -515,7 +526,8 @@ def cmd_eval_end2end(
             "Recall@k": rec,
             "MRR": mrr,
             "EM": em,
-            "Grounded": grounded,
+            "SentGrounded": sent_frac,
+            "Grounded": float(all_flag),
             "answer": pred,
         })
 
@@ -525,12 +537,13 @@ def cmd_eval_end2end(
         typer.echo(f"- Q: {r['question']}")
         typer.echo(f"  retrieved: {r['retrieved']}")
         typer.echo(f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}")
-        typer.echo(f"  EM={r['EM']:.2f}  Grounded={r['Grounded']:.2f}")
+        typer.echo(f"  EM={r['EM']:.2f}  SentGrounded={r['SentGrounded']:.2f}  Grounded={r['Grounded']:.2f}")
         typer.echo(f"  ANSWER: {r['answer']}\n")
 
     n = max(len(rows), 1)
     typer.secho(
-        f"\nSummary: N={n}  avg_Recall@k={sum_recall/n:.2f}  avg_MRR={sum_mrr/n:.2f}  avg_EM={sum_em/n:.2f}  avg_Grounded={sum_grounded/n:.2f}",
+        f"\nSummary: N={n}  avg_Recall@k={sum_recall/n:.2f}  avg_MRR={sum_mrr/n:.2f}  "
+        f"avg_EM={sum_em/n:.2f}  avg_SentGrounded={sum_sent_grounded/n:.2f}  avg_Grounded={sum_ans_grounded/n:.2f}",
         fg=typer.colors.CYAN,
     )
 
