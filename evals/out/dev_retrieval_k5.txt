@@ -1,0 +1,71 @@
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+Per-question results:
+- Q: What does GET /v1/customers return?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__customers__p1__c15', 'docs.stripe.com__api__customers__p1__c16', 'docs.stripe.com__api__metadata__p1__c4']
+  Recall@k=1.00  MRR=1.00
+- Q: What is a PaymentIntent used for?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c0', 'docs.stripe.com__api__payment_intents__p1__c32', 'docs.stripe.com__api__payment_intents__p1__c1', 'docs.stripe.com__api__payment_intents__p1__c14']
+  Recall@k=1.00  MRR=1.00
+- Q: In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c5', 'docs.stripe.com__api__metadata__p1__c8', 'docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c9', 'docs.stripe.com__api__metadata__p1__c10']
+  Recall@k=1.00  MRR=1.00
+- Q: What is the purpose of the 'metadata' field on Stripe objects?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c1', 'docs.stripe.com__api__metadata__p1__c0', 'docs.stripe.com__api__metadata__p1__c2', 'docs.stripe.com__api__payment_intents__p1__c40', 'docs.stripe.com__api__setup_intents__p1__c13']
+  Recall@k=1.00  MRR=1.00
+- Q: Name some PaymentIntent statuses.
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__setup_intents__p1__c6', 'docs.stripe.com__api__payment_intents__p1__c0']
+  Recall@k=1.00  MRR=1.00
+- Q: Does GET /v1/customers require parameters?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__metadata__p1__c9', 'docs.stripe.com__api__customers__p1__c8', 'docs.stripe.com__api__customers__p1__c14']
+  Recall@k=1.00  MRR=0.25
+- Q: What does the 'has_more' field indicate in Stripe list responses?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c5', 'docs.stripe.com__api__metadata__p1__c14', 'docs.stripe.com__api__metadata__p1__c13', 'docs.stripe.com__api__metadata__p1__c11', 'docs.stripe.com__api__payment_intents__p1__c17']
+  Recall@k=1.00  MRR=1.00
+- Q: What should a reviewer look for in a code review?
+  retrieved: ['google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review____p1__c0']
+  Recall@k=1.00  MRR=1.00
+- Q: What is the reviewer’s primary responsibility in Google’s guidelines?
+  retrieved: ['google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c0', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c0', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3']
+  Recall@k=1.00  MRR=1.00
+- Q: How should minor suggestions be marked in reviews?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c5', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c4', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8']
+  Recall@k=1.00  MRR=1.00
+- Q: Where are Google’s code review guidelines split?
+  retrieved: ['google.github.io__eng-practices__review____p1__c0', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c0', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review__developer____p1__c0', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2']
+  Recall@k=1.00  MRR=1.00
+- Q: As an author, what should you do before sending a CL?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c7', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices____p1__c1']
+  Recall@k=1.00  MRR=1.00
+- Q: What does confirming a PaymentIntent do?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c36', 'docs.stripe.com__api__payment_intents__p1__c25', 'docs.stripe.com__api__payment_intents__p1__c20', 'docs.stripe.com__api__payment_intents__p1__c22']
+  Recall@k=1.00  MRR=1.00
+- Q: When would a PaymentIntent require customer action?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c29', 'docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c42']
+  Recall@k=1.00  MRR=1.00
+- Q: What core fields are typical on a Customer object?
+  retrieved: ['docs.stripe.com__api__customers__p1__c1', 'docs.stripe.com__api__customers__p1__c5', 'docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__customers__p1__c0', 'docs.stripe.com__api__metadata__p1__c4']
+  Recall@k=1.00  MRR=1.00
+- Q: What is the advantage of keeping CLs small?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c7']
+  Recall@k=1.00  MRR=1.00
+- Q: How should review comments be written?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c5']
+  Recall@k=1.00  MRR=1.00
+
+Summary: N=17  avg_Recall@k=1.00  avg_MRR=0.96

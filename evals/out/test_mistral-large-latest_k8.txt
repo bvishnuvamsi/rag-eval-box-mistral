@@ -1,0 +1,67 @@
+[gold] How should reviewers balance speed and code quality? -> ['google.github.io__eng-practices__review__reviewer__standard.html', 'google.github.io__eng-practices__review']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] If a change works but harms design, what should the reviewer do? -> ['google.github.io__eng-practices__review__reviewer__standard.html']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What makes a good code review comment? -> ['google.github.io__eng-practices__review__reviewer__standard.html']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What indicates that a PaymentIntent needs customer action? -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] How does Stripe metadata help developers? -> ['docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] Which endpoint retrieves a single customer by ID? -> ['docs.stripe.com__api__customers']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] Can you search for customers? -> ['docs.stripe.com__api__customers', 'docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What guarantee does a PaymentIntent give about charges? -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+Per-question results:
+- Q: How should reviewers balance speed and code quality?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c0']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.17  SemScore=0.82  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Reviewers should prioritize approving changes that improve overall code health, even if imperfect, to avoid unnecessary delays while ensuring continuous improvement [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+They should balance progress with quality by focusing on key aspects like functionality, complexity, and maintainability rather than minor polish [google.github.io__eng-practices__review__ p1].
+
+- Q: If a change works but harms design, what should the reviewer do?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c5', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2', 'google.github.io__eng-practices__review____p1__c1']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.09  SemScore=0.76  SentGrounded=1.00  Grounded=1.00
+  ANSWER: If a change works but harms design, the reviewer should reject it if it worsens the overall code health of the system, as no guideline justifies accepting such changes except in emergencies [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+The reviewer should ensure the code aligns with standard software design principles rather than personal preference [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+- Q: What makes a good code review comment?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2', 'google.github.io__eng-practices__review__reviewer____p1__c0']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.03  SemScore=0.71  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A good code review comment should focus on improving code health by addressing functionality, complexity, tests, naming, comments, style, and documentation—without blocking progress over minor polish [google.github.io__eng-practices__review__ p1].
+
+For less critical suggestions, prefix them with "Nit:" to indicate they’re optional, and prioritize teaching or sharing knowledge where helpful [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+- Q: What indicates that a PaymentIntent needs customer action?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c29', 'docs.stripe.com__api__payment_intents__p1__c7', 'docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c4', 'docs.stripe.com__api__payment_intents__p1__c42', 'docs.stripe.com__api__setup_intents__p1__c1']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.23  SemScore=0.83  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A PaymentIntent needs customer action when its status is **`requires_action`**, indicating additional steps are required from the customer to complete the payment[docs.stripe.com__api__payment_intents p1].
+
+This is also reflected in the **`next_action`** property, which specifies the actions needed for fulfillment[docs.stripe.com__api__payment_intents p1].
+
+- Q: How does Stripe metadata help developers?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c1', 'docs.stripe.com__api__metadata__p1__c2', 'docs.stripe.com__api__metadata__p1__c0', 'docs.stripe.com__api__payment_intents__p1__c40', 'docs.stripe.com__api__setup_intents__p1__c13', 'docs.stripe.com__api__customers__p1__c12', 'docs.stripe.com__api__customers__p1__c6', 'docs.stripe.com__api__setup_intents__p1__c19']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.14  SemScore=0.77  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Stripe metadata helps developers store additional, structured key-value data on objects like Customers, Charges, or Subscriptions for internal tracking or reference [docs.stripe.com__api__metadata p1]. It enables linking system IDs (e.g., order numbers, user IDs) to Stripe objects for simplified lookups and refund auditing [docs.stripe.com__api__metadata p1].
+
+- Q: Which endpoint retrieves a single customer by ID?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__customers__p1__c16', 'docs.stripe.com__api__customers__p1__c0', 'docs.stripe.com__api__metadata__p1__c4', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__customers__p1__c14', 'docs.stripe.com__api__customers__p1__c5', 'docs.stripe.com__api__customers__p1__c15']
+  Recall@k=1.00  MRR=0.50  EM=0.00  F1=0.28  SemScore=0.85  SentGrounded=1.00  Grounded=1.00
+  ANSWER: The endpoint to retrieve a single customer by ID is `/v1/customers/{customer_id}` [docs.stripe.com__api__customers p1]. This returns the Customer object for a valid identifier [docs.stripe.com__api__customers p1].
+
+- Q: Can you search for customers?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c11', 'docs.stripe.com__api__customers__p1__c0', 'docs.stripe.com__api__metadata__p1__c15', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__customers__p1__c5', 'docs.stripe.com__api__metadata__p1__c4', 'docs.stripe.com__api__customers__p1__c16']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.41  SemScore=0.86  SentGrounded=0.50  Grounded=0.00
+  ANSWER: Yes, you can search for customers using Stripe’s search API via the `/v1/customers/search` endpoint. [docs.stripe.com__api__metadata p1]
+
+- Q: What guarantee does a PaymentIntent give about charges?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c1', 'docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c46', 'docs.stripe.com__api__payment_intents__p1__c21', 'docs.stripe.com__api__payment_intents__p1__c38', 'docs.stripe.com__api__payment_intents__p1__c36', 'docs.stripe.com__api__payment_intents__p1__c0']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.40  SemScore=0.80  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A PaymentIntent guarantees that it ultimately creates **at most one successful charge**[docs.stripe.com__api__payment_intents p1].
+
+
+Summary: N=8  avg_Recall@k=1.00  avg_MRR=0.94  avg_EM=0.00  avg_F1=0.22  avg_SemScore=0.80  avg_SentGrounded=0.94  avg_Grounded=0.88

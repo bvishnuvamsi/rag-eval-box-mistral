@@ -362,7 +362,7 @@ Usage notes
 > If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
 
 
-## 14)Results: Model × k ablation (dev set)
+## 14) Results: Model × k ablation (dev set)
 
 All runs use `--embed-model mistral-embed-2312`, temperature 0.0, strict sentence-level groundedness (no post-hoc citation appends).
 ```sh
@@ -417,5 +417,101 @@ for K in 3 5 8; do
     --meta-csv data/real/chunk_meta_web.csv \
     --labelset src/evals/qa_labelset_eng.jsonl \
     --k $K
+done
+```
+
+
+## Evals
+
+Evaluated two Mistral chat models with strict sentence-level citations on a 17-item dev set and 8-item held-out test set (Stripe + Google Eng Practices). Retrieval uses `mistral-embed-2312` over `data/real/faiss_web.index`, k=3.
+
+Results (frozen logs in [`evals/out/`](evals/out/)):
+
+### What to check in
+```bash
+src/evals/qa_labelset_dev.jsonl
+src/evals/qa_labelset_test.jsonl
+evals/out/dev_mistral-large-latest_k3.txt
+evals/out/dev_mistral-medium-latest_k3.txt
+evals/out/test_mistral-large-latest_k3.txt
+evals/out/test_mistral-medium-latest_k3.txt
+README.md
+```
+
+## Ablation: `k` × model on dev/test
+
+**Setup.** All runs use:
+- Embed model: `mistral-embed-2312`
+- Chat models: `mistral-large-latest`, `mistral-medium-latest`
+- Index: `data/real/faiss_web.index`, metadata: `data/real/chunk_meta_web.csv`
+- Strict citation prompting
+- Splits: `dev` (N=17), `test` (N=8)
+
+### End-to-end (strict-citation answers)
+```sh
+#### dev (N=17)
+| k | Large F1 | Large Sem | Large SentG | Large Gnd | Medium F1 | Medium Sem | Medium SentG | Medium Gnd |
+|---:|:-------:|:---------:|:-----------:|:---------:|:---------:|:----------:|:------------:|:----------:|
+| 3 | 0.24 | 0.80 | 0.85 | 0.71 | 0.24 | 0.80 | 0.85 | 0.71 |
+| 5 | 0.21 | 0.79 | 0.83 | 0.71 | 0.25 | 0.80 | 0.88 | 0.76 |
+| 8 | 0.25 | 0.80 | 0.77 | 0.59 | 0.23 | 0.80 | 0.86 | 0.71 |
+
+#### test (N=8)
+| k | Large F1 | Large Sem | Large SentG | Large Gnd | Medium F1 | Medium Sem | Medium SentG | Medium Gnd |
+|---:|:-------:|:---------:|:-----------:|:---------:|:---------:|:----------:|:------------:|:----------:|
+| 3 | 0.21 | 0.79 | 1.00 | 1.00 | 0.20 | 0.79 | 0.94 | 0.88 |
+| 5 | 0.21 | 0.79 | 0.94 | 0.88 | 0.23 | 0.80 | 0.88 | 0.75 |
+| 8 | 0.22 | 0.80 | 0.94 | 0.88 | 0.22 | 0.80 | 0.94 | 0.88 |
+
+> **Metric notes.** *Sem* = semantic similarity; *SentG* = fraction of answer sentences with grounded citations; *Gnd* = answer-level groundedness.
+```
+```sh
+### Retrieval-only
+
+#### dev (N=17)
+| k | Recall@k | MRR |
+|---:|:-------:|:---:|
+| 3 | 0.94 | 0.94 |
+| 5 | 1.00 | 0.96 |
+| 8 | 1.00 | 0.96 |
+
+#### test (N=8)
+| k | Recall@k | MRR |
+|---:|:-------:|:---:|
+| 3 | 1.00 | 0.94 |
+| 5 | 1.00 | 0.94 |
+| 8 | 1.00 | 0.94 |
+
+```
+---
+
+### Reproduce
+
+```bash
+# End-to-end grid (k ∈ {3,5,8} × {dev,test} × {large,medium})
+for SPLIT in dev test; do
+  for K in 3 5 8; do
+    for MODEL in mistral-large-latest mistral-medium-latest; do
+      python -m src.cli eval-end2end \
+        --embed-model mistral-embed-2312 \
+        --chat-model $MODEL \
+        --index-path data/real/faiss_web.index \
+        --meta-csv data/real/chunk_meta_web.csv \
+        --labelset src/evals/qa_labelset_${SPLIT}.jsonl \
+        --k $K | tee evals/out/${SPLIT}_${MODEL}_k${K}.txt
+    done
+  done
+done
+
+# Retrieval-only (same grid)
+for SPLIT in dev test; do
+  for K in 3 5 8; do
+    python -m src.cli eval-retrieval \
+      --embed-model mistral-embed-2312 \
+      --index-path data/real/faiss_web.index \
+      --meta-csv data/real/chunk_meta_web.csv \
+      --labelset src/evals/qa_labelset_${SPLIT}.jsonl \
+      --k $K | tee evals/out/${SPLIT}_retrieval_k${K}.txt
+  done
 done
 ```

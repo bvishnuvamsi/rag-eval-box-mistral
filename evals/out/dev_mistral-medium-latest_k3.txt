@@ -1,0 +1,126 @@
+[gold] What does GET /v1/customers return? -> ['docs.stripe.com__api__customers', 'docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What is a PaymentIntent used for? -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent? -> ['docs.stripe.com__api__customers', 'docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What is the purpose of the 'metadata' field on Stripe objects? -> ['docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] Name some PaymentIntent statuses. -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] Does GET /v1/customers require parameters? -> ['docs.stripe.com__api__customers']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What does the 'has_more' field indicate in Stripe list responses? -> ['docs.stripe.com__api__metadata', 'docs.stripe.com__api__customers']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What should a reviewer look for in a code review? -> ['google.github.io__eng-practices__review', 'google.github.io__eng-practices__review__reviewer__standard.html']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What is the reviewer’s primary responsibility in Google’s guidelines? -> ['google.github.io__eng-practices__review__reviewer__standard.html', 'google.github.io__eng-practices__review']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] How should minor suggestions be marked in reviews? -> ['google.github.io__eng-practices__review__reviewer__standard.html']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] Where are Google’s code review guidelines split? -> ['google.github.io__eng-practices__review', 'google.github.io__eng-practices__review__reviewer__standard.html', 'google.github.io__eng-practices__review__developer']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] As an author, what should you do before sending a CL? -> ['google.github.io__eng-practices__review__developer', 'google.github.io__eng-practices__review']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What does confirming a PaymentIntent do? -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] When would a PaymentIntent require customer action? -> ['docs.stripe.com__api__payment_intents']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What core fields are typical on a Customer object? -> ['docs.stripe.com__api__customers', 'docs.stripe.com__api__metadata']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] What is the advantage of keeping CLs small? -> ['google.github.io__eng-practices__review']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[gold] How should review comments be written? -> ['google.github.io__eng-practices__review__reviewer__standard.html']
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+Per-question results:
+- Q: What does GET /v1/customers return?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__customers__p1__c15']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.22  SemScore=0.81  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A **GET /v1/customers** request retrieves a list of `Customer` objects, each containing details like `id`, `email`, `balance`, and `metadata` [docs.stripe.com__api__customers p1]. The response includes an array of customer records under the `data` field [docs.stripe.com__api__customers p1].
+
+- Q: What is a PaymentIntent used for?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c0', 'docs.stripe.com__api__payment_intents__p1__c32']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.33  SemScore=0.78  SentGrounded=0.50  Grounded=0.00
+  ANSWER: A **PaymentIntent** is used to guide the process of collecting a payment from a customer in your system. It tracks the lifecycle of a payment, including authentication and status transitions, and should be created once per order or customer session[docs.stripe.com__api__payment_intents p1].
+
+- Q: In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c5', 'docs.stripe.com__api__metadata__p1__c8', 'docs.stripe.com__api__metadata__p1__c16']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.25  SemScore=0.81  SentGrounded=0.50  Grounded=0.00
+  ANSWER: An object of type `'list'` in Stripe list endpoints represents a paginated collection of resources (e.g., customers). The `data` array contains the actual response elements, paginated by request parameters like `limit` or cursor-based pagination [docs.stripe.com__api__metadata p1].
+
+- Q: What is the purpose of the 'metadata' field on Stripe objects?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c1', 'docs.stripe.com__api__metadata__p1__c0', 'docs.stripe.com__api__metadata__p1__c2']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.12  SemScore=0.75  SentGrounded=1.00  Grounded=1.00
+  ANSWER: The **metadata** field on Stripe objects allows you to attach structured key-value data (up to 50 keys) for internal use, such as linking system IDs or storing additional context[docs.stripe.com__api__metadata p1]. Stripe does not use this data for processing (e.g., authorizing charges), and it remains invisible to users unless explicitly shared[docs.stripe.com__api__metadata p1].
+
+- Q: Name some PaymentIntent statuses.
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c19']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.32  SemScore=0.86  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Some PaymentIntent statuses include **requires_payment_method**, **requires_confirmation**, **requires_action**, **processing**, **requires_capture**, **canceled**, and **succeeded**[docs.stripe.com__api__payment_intents p1].
+
+- Q: Does GET /v1/customers require parameters?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c10', 'docs.stripe.com__api__metadata__p1__c9']
+  Recall@k=0.00  MRR=0.00  EM=0.00  F1=0.28  SemScore=0.80  SentGrounded=1.00  Grounded=1.00
+  ANSWER: The `GET /v1/customers` endpoint does not require parameters, as it returns a list of customers by default [docs.stripe.com__api__metadata p1].
+
+- Q: What does the 'has_more' field indicate in Stripe list responses?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c5', 'docs.stripe.com__api__metadata__p1__c14', 'docs.stripe.com__api__metadata__p1__c13']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.17  SemScore=0.78  SentGrounded=0.50  Grounded=0.00
+  ANSWER: The `'has_more'` field indicates whether additional elements are available after the current set of results in a paginated list response. If `false`, it means the current set is the end of the list[docs.stripe.com__api__metadata p1].
+
+- Q: What should a reviewer look for in a code review?
+  retrieved: ['google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.25  SemScore=0.84  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A reviewer should check for **functionality, complexity, tests, naming, comments, style, and documentation** in the code review[google.github.io__eng-practices__review__ p1]. They should also provide constructive feedback, using "Nit:" for minor suggestions, while ensuring the change doesn’t worsen overall code health[google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+- Q: What is the reviewer’s primary responsibility in Google’s guidelines?
+  retrieved: ['google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c0', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c0']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.26  SemScore=0.78  SentGrounded=1.00  Grounded=1.00
+  ANSWER: The reviewer’s primary responsibility is to ensure that each CL improves the overall code health of Google’s codebase over time**[google.github.io__eng-practices__review__reviewer__standard.html p1]**. They must balance this duty while allowing developers to make meaningful progress**[google.github.io__eng-practices__review__reviewer__standard.html p1]**.
+
+- Q: How should minor suggestions be marked in reviews?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c5']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.21  SemScore=0.87  SentGrounded=0.50  Grounded=0.00
+  ANSWER: Minor suggestions should be prefixed with "Nit:" to indicate they are optional points of polish. [google.github.io__eng-practices__review__reviewer__standard.html p1]
+
+- Q: Where are Google’s code review guidelines split?
+  retrieved: ['google.github.io__eng-practices__review____p1__c0', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c0', 'google.github.io__eng-practices__review____p1__c2']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.52  SemScore=0.85  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Google’s code review guidelines are split into three main parts: an overview, *How To Do A Code Review* (for reviewers), and *The CL Author’s Guide* (for developers) [google.github.io__eng-practices__review__ p1].
+
+- Q: As an author, what should you do before sending a CL?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c7']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.07  SemScore=0.78  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Before sending a CL, the author should ensure consensus with the reviewer based on the **CL Author’s Guide** and **Reviewer Guide**[google.github.io__eng-practices__review__reviewer__standard.html p1]. If disagreements persist, escalate or discuss face-to-face, documenting the outcome in the CL[google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+- Q: What does confirming a PaymentIntent do?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c36', 'docs.stripe.com__api__payment_intents__p1__c25']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.32  SemScore=0.78  SentGrounded=0.50  Grounded=0.00
+  ANSWER: Confirming a PaymentIntent initiates the payment process after attaching a payment method to the PaymentIntent object. This step is required to complete the payment flow in the Payment Intents API[docs.stripe.com__api__payment_intents p1].
+
+- Q: When would a PaymentIntent require customer action?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c29']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.38  SemScore=0.83  SentGrounded=1.00  Grounded=1.00
+  ANSWER: A PaymentIntent requires customer action when its status is **`requires_action`**, meaning additional steps (e.g., authentication) are needed from the customer to complete the payment.[docs.stripe.com__api__payment_intents p1]
+
+- Q: What core fields are typical on a Customer object?
+  retrieved: ['docs.stripe.com__api__customers__p1__c1', 'docs.stripe.com__api__customers__p1__c5', 'docs.stripe.com__api__metadata__p1__c16']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.18  SemScore=0.77  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Typical core fields on a **Customer** object include **email**, **name**, **phone**, **shipping**, **description**, and **metadata** for additional structured data[docs.stripe.com__api__customers p1]. Other fields like **address**, **balance**, **currency**, and **tax_exempt** may also be present[docs.stripe.com__api__customers p1].
+
+- Q: What is the advantage of keeping CLs small?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.11  SemScore=0.78  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Keeping CLs small ensures faster reviews and reduces delays caused by prolonged disagreements between authors and reviewers[google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+Small CLs also allow for continuous improvement by making it easier to assess and approve incremental changes that enhance code health[google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+- Q: How should review comments be written?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6']
+  Recall@k=1.00  MRR=1.00  EM=0.00  F1=0.14  SemScore=0.72  SentGrounded=1.00  Grounded=1.00
+  ANSWER: Review comments should focus on principles of software design rather than personal opinion, and reviewers should accept valid alternatives demonstrated by the author [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+Less critical suggestions should be prefixed with "Nit:" to indicate they are optional improvements [google.github.io__eng-practices__review__reviewer__standard.html p1].
+
+
+Summary: N=17  avg_Recall@k=0.94  avg_MRR=0.94  avg_EM=0.00  avg_F1=0.24  avg_SemScore=0.80  avg_SentGrounded=0.85  avg_Grounded=0.71

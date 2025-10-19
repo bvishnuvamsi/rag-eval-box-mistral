@@ -1,0 +1,35 @@
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+[cache] query hits=1 misses=0  (data/emb_cache.sqlite)
+Per-question results:
+- Q: How should reviewers balance speed and code quality?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c2']
+  Recall@k=1.00  MRR=1.00
+- Q: If a change works but harms design, what should the reviewer do?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c5', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c6', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8']
+  Recall@k=1.00  MRR=1.00
+- Q: What makes a good code review comment?
+  retrieved: ['google.github.io__eng-practices__review__reviewer__standard.html__p1__c3', 'google.github.io__eng-practices__review____p1__c2', 'google.github.io__eng-practices__review____p1__c1', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c8', 'google.github.io__eng-practices__review__reviewer__standard.html__p1__c1']
+  Recall@k=1.00  MRR=1.00
+- Q: What indicates that a PaymentIntent needs customer action?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c13', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c29', 'docs.stripe.com__api__payment_intents__p1__c7', 'docs.stripe.com__api__payment_intents__p1__c19']
+  Recall@k=1.00  MRR=1.00
+- Q: How does Stripe metadata help developers?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c1', 'docs.stripe.com__api__metadata__p1__c2', 'docs.stripe.com__api__metadata__p1__c0', 'docs.stripe.com__api__payment_intents__p1__c40', 'docs.stripe.com__api__setup_intents__p1__c13']
+  Recall@k=1.00  MRR=1.00
+- Q: Which endpoint retrieves a single customer by ID?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__customers__p1__c16', 'docs.stripe.com__api__customers__p1__c0', 'docs.stripe.com__api__metadata__p1__c4', 'docs.stripe.com__api__metadata__p1__c10']
+  Recall@k=1.00  MRR=0.50
+- Q: Can you search for customers?
+  retrieved: ['docs.stripe.com__api__metadata__p1__c16', 'docs.stripe.com__api__metadata__p1__c11', 'docs.stripe.com__api__customers__p1__c0', 'docs.stripe.com__api__metadata__p1__c15', 'docs.stripe.com__api__metadata__p1__c10']
+  Recall@k=1.00  MRR=1.00
+- Q: What guarantee does a PaymentIntent give about charges?
+  retrieved: ['docs.stripe.com__api__payment_intents__p1__c1', 'docs.stripe.com__api__payment_intents__p1__c19', 'docs.stripe.com__api__payment_intents__p1__c14', 'docs.stripe.com__api__payment_intents__p1__c46', 'docs.stripe.com__api__payment_intents__p1__c21']
+  Recall@k=1.00  MRR=1.00
+
+Summary: N=8  avg_Recall@k=1.00  avg_MRR=0.94
