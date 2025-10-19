@@ -1,12 +1,20 @@
 # src/index/build_faiss.py
 # Purpose: read chunk CSV -> embed text -> build FAISS index -> save index + metadata CSV.
-
 from __future__ import annotations
-from pathlib import Path
 import csv
 import math
 import faiss
 import numpy as np
+from src.index.emb_cache import EmbeddingCache, get_or_embed
+from pathlib import Path
+
+def _embed_fn_factory(client, model: str):
+    # Returns a function that embeds a list[str] -> list[list[float]]
+    def _fn(texts):
+        # client.embed returns list[list[float]]
+        return client.embed(model=model, inputs=texts)
+    return _fn
+
 
 def read_chunks(chunks_csv: Path):
     rows = []
@@ -38,17 +46,35 @@ def build_index(embeddings: np.ndarray) -> faiss.Index:
     index.add(embeddings)  # rows correspond 1:1 with vec_id indices
     return index
 
-def embed_in_batches(client, model: str, texts: list[str], batch_size: int = 64) -> np.ndarray:
+def embed_in_batches(
+    client,
+    model: str,
+    texts: list[str],
+    batch_size: int = 64,
+    cache_path: Path | None = None,
+) -> np.ndarray:
     """
-    Calls client.embed() in batches -> returns float32 numpy array [N, D].
+    Cache-aware batch embedding. Returns float32 numpy array [N, D] in the same order as `texts`.
     """
-    vectors = []
-    for i in range(0, len(texts), batch_size):
-        chunk = texts[i:i + batch_size]
-        embs = client.embed(model=model, inputs=chunk)
-        vectors.extend(embs)
-    arr = np.asarray(vectors, dtype="float32")
-    return arr
+    vectors: list[list[float]] = []
+    embed_fn = _embed_fn_factory(client, model)
+    cache_path = cache_path or Path("data/emb_cache.sqlite")
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with EmbeddingCache(cache_path) as cache:
+        for i in range(0, len(texts), batch_size):
+            chunk = texts[i : i + batch_size]
+            embs, hits, misses = get_or_embed(
+                cache=cache,
+                model=model,
+                texts=chunk,
+                embed_fn=embed_fn,
+            )
+            print(f"[cache] batch={i//batch_size} hits={hits} misses={misses}")
+            vectors.extend(embs)
+
+    return np.asarray(vectors, dtype="float32")
+
 
 def build_and_save(chunks_csv: Path, index_path: Path, meta_csv: Path, client, embed_model: str, batch_size: int = 64) -> int:
     rows = read_chunks(chunks_csv)

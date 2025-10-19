@@ -49,45 +49,48 @@ class MistralClient:
         items = data.get("data", [])
         return [item.get("id", "unknown") for item in items]
     
-    def _post_json(self, path: str, payload: Dict[str, Any], max_retries: int = 6) -> Dict[str, Any]:
-        """
-        Robust POST with retries for free/experiment plans:
-        - Retries on 429 and 5xx, honoring Retry-After when present
-        - Retries on transient network errors (ReadTimeout, ConnectTimeout, etc.)
-        - Exponential backoff with jitter, capped
-        """
-        url = f"{self.base_url}{path}"
-        backoff = 1.0  # seconds
-        limits = httpx.Limits(max_keepalive_connections=10, max_connections=10)
+    def _post_json(self, path: str, payload: dict, max_retries: int = 8):
+        import time, httpx, os
+        from httpx import Limits
+
+        url = self.base_url + path
+        backoff = 1.0
+        rate_limit_seconds = float(os.getenv("MISTRAL_RATE_LIMIT_SECONDS", "0"))  # e.g. 0.5 or 1.0
+        limits = Limits(max_connections=10, max_keepalive_connections=10, keepalive_expiry=5.0)
+        last_exc = None
+
         with httpx.Client(timeout=self.timeout, limits=limits) as client:
             for attempt in range(max_retries):
                 try:
+                    if rate_limit_seconds > 0:
+                        time.sleep(rate_limit_seconds)
+
                     r = client.post(url, headers=self._headers(), json=payload)
-                    if r.status_code in (429,) or 500 <= r.status_code < 600:
-                        # Respect server hint if present
-                        retry_after = r.headers.get("retry-after")
-                        wait = float(retry_after) if retry_after else backoff
-                        time.sleep(wait + random.uniform(0, 0.5))
-                        backoff = min(backoff * 2, 16.0)
+
+                    if r.status_code < 400:
+                        return r.json()
+
+                    # Graceful handling for rate limits and transient errors
+                    if r.status_code in (429, 503):
+                        retry_after = r.headers.get("Retry-After")
+                        if retry_after and retry_after.replace(".", "", 1).isdigit():
+                            wait = float(retry_after)
+                        else:
+                            wait = backoff
+                        time.sleep(wait)
+                        backoff = min(backoff * 2, 32.0)
                         continue
-                    r.raise_for_status()
-                    return r.json()
-                except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ReadError, httpx.RemoteProtocolError) as e:
-                    # Transient network problem: back off and retry
-                    if attempt == max_retries - 1:
-                        raise
-                    time.sleep(backoff + random.uniform(0, 0.5))
-                    backoff = min(backoff * 2, 16.0)
-                except httpx.HTTPStatusError as e:
-                    # Non-retriable 4xx errors should surface immediately
-                    if 400 <= e.response.status_code < 500 and e.response.status_code not in (429,):
-                        raise
-                    # Otherwise treat as retriable (shouldn’t happen because we handle above)
-                    if attempt == max_retries - 1:
-                        raise
-                    time.sleep(backoff + random.uniform(0, 0.5))
-                    backoff = min(backoff * 2, 16.0)
-        raise httpx.HTTPError(f"Failed after {max_retries} attempts: {path}")
+
+                    # Other 4xx/5xx: raise with body snippet for debugging
+                    raise httpx.HTTPStatusError(f"{r.status_code}: {r.text[:200]}", request=r.request, response=r)
+
+                except Exception as e:
+                    last_exc = e
+                    time.sleep(min(backoff, 8.0))
+                    backoff = min(backoff * 2, 32.0)
+
+        raise httpx.HTTPError(f"Failed after {max_retries} attempts: {path} ({last_exc})")
+
 
     def embed(self, model: str, inputs: list[str]) -> list[list[float]]:
         data = self._post_json("/v1/embeddings", {"model": model, "input": inputs})
