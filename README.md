@@ -87,9 +87,9 @@ python -m src.cli query "What is a PaymentIntent used for?" \
   ```
 You’ll see top-k snippets and L2 scores.
 
-Answer with citations
-Citation rule: the model must copy exact tokens like [doc_id pX] that we provide.
+### Answer with citations (strict bracket tokens)
 
+Citation rule: the model must copy exact tokens like [doc_id pX] that we provide.
 We print the acceptable tokens before the answer to force correct citations.
 
 ```sh
@@ -191,7 +191,7 @@ python -m src.cli ingest-web --raw-dir data/real/raw --out-csv data/real/docs_we
 Example src/evals/qa_labelset_eng.jsonl:
 
 ```sh
-JSON
+# JSON
 
 {"question":"What does GET /v1/customers return?","answers":["a list of customer objects","a paginated list of customers"],"gold_doc_ids":["docs.stripe.com__api__customers","docs.stripe.com__api__metadata"]}
 {"question":"What is a PaymentIntent used for?","answers":["to track the lifecycle of a payment, including authentication/confirmation, ensuring at most one successful charge"],"gold_doc_ids":["docs.stripe.com__api__payment_intents"]}
@@ -339,7 +339,7 @@ python -m src.cli eval-end2end \
   --k 5
 ```
 
-## 13)Dataset & Source References
+## 13) Dataset & Source References
 
 This project uses public web documentation for small-scale RAG evaluation. All content is © the respective owners and used here for educational/testing purposes only. See each site’s terms for reuse policies.
 
@@ -358,4 +358,5 @@ Provenance: Original URLs listed in data/real/sources_e.txt; downloaded HTML sto
 
 Usage notes
 * We store only small text chunks for retrieval evaluation (see data/real/chunk_meta_web.csv).
-* If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
+
+> If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
