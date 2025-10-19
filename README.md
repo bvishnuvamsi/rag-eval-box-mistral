@@ -210,10 +210,11 @@ Flexible loader: the eval code tries several common field names (answers, gold_d
 [docs.stripe.com__api__metadata p1] <chunk text…>
 ```
 
-* We also show “Acceptable citation tokens” (e.g., [docs.stripe.com__api__customers p1]).
-* The system prompt forces the model to copy one of those tokens exactly.
-* A post-check appends a token if the model forgot one.
-* Groundedness metric = 1.0 iff at least one exact token is present.
+* We show Acceptable citation tokens (the bracketed IDs above) and the prompt forces the model to copy one exactly.
+* No post-hoc citation appends. If the model fails to include a valid token, that sentence is ungrounded and the answer-level groundedness can be 0.
+* Metrics:
+  * SentGrounded: fraction of answer sentences that contain ≥1 exact bracket token from retrieved context.
+  * Grounded: 1 if the answer contains ≥1 exact bracket token anywhere; else 0.
 
 ## 8) Troubleshooting
 
