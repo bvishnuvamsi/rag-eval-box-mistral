@@ -362,95 +362,16 @@ Usage notes
 
 > If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
 
+## 14)Ablation: `k` × model on dev/test
 
-## 14) Results: Model × k ablation (dev set)
-
-All runs use `--embed-model mistral-embed-2312`, temperature 0.0, strict sentence-level groundedness (no post-hoc citation appends).
-```sh
-
-| Model                | k | EM   | F1   | SemScore | SentGrounded | Grounded | Recall@k | MRR  |
-|----------------------|---|------|------|----------|--------------|----------|----------|------|
-| mistral-large-latest | 3 | 0.00 | 0.30 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-large-latest | 5 | 0.00 | 0.28 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-large-latest | 8 | 0.00 | 0.24 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-medium-2508  | 3 | 0.00 | 0.30 | 0.82     | 0.88         | 0.75     | 1.00     | 1.00 |
-| mistral-medium-2508  | 5 | 0.00 | 0.30 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-medium-2508  | 8 | 0.00 | 0.29 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-medium-latest| 3 | 0.00 | 0.35 | 0.83     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-medium-latest| 5 | 0.00 | 0.28 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
-| mistral-medium-latest| 8 | 0.00 | 0.25 | 0.82     | 1.00         | 1.00     | 1.00     | 1.00 |
-
-**Default choice (for this corpus):** `mistral-medium-latest` with `k=3` (best F1 = 0.35) and fully grounded.
-
-```
-**Notes.**
-- EM is a strict substring proxy; we report **F1** and **SemScore** as primary answer-quality signals.
-- **Groundedness** is computed at the **sentence** level: each sentence must include at least one exact bracket token present in the retrieved context. We never append citations post-hoc.
-
-
-### How to reproduce the ablation
-```bash
-for K in 3 5 8; do
-  python -m src.cli eval-end2end \
-    --embed-model mistral-embed-2312 \
-    --chat-model mistral-large-latest \
-    --index-path data/real/faiss_web.index \
-    --meta-csv data/real/chunk_meta_web.csv \
-    --labelset src/evals/qa_labelset_eng.jsonl \
-    --k $K
-done
-
-for K in 3 5 8; do
-  python -m src.cli eval-end2end \
-    --embed-model mistral-embed-2312 \
-    --chat-model mistral-medium-2508 \
-    --index-path data/real/faiss_web.index \
-    --meta-csv data/real/chunk_meta_web.csv \
-    --labelset src/evals/qa_labelset_eng.jsonl \
-    --k $K
-done
-
-for K in 3 5 8; do
-  python -m src.cli eval-end2end \
-    --embed-model mistral-embed-2312 \
-    --chat-model mistral-medium-latest \
-    --index-path data/real/faiss_web.index \
-    --meta-csv data/real/chunk_meta_web.csv \
-    --labelset src/evals/qa_labelset_eng.jsonl \
-    --k $K
-done
-```
-
-
-## Evals
-
-Evaluated two Mistral chat models with strict sentence-level citations on a 17-item dev set and 8-item held-out test set (Stripe + Google Eng Practices). Retrieval uses `mistral-embed-2312` over `data/real/faiss_web.index`, k=3.
-
-Results (frozen logs in [`evals/out/`](evals/out/)):
-
-### What to check in
-```bash
-src/evals/qa_labelset_dev.jsonl
-src/evals/qa_labelset_test.jsonl
-evals/out/dev_mistral-large-latest_k3.txt
-evals/out/dev_mistral-medium-latest_k3.txt
-evals/out/test_mistral-large-latest_k3.txt
-evals/out/test_mistral-medium-latest_k3.txt
-README.md
-```
-
-## Ablation: `k` × model on dev/test
-
-**Setup.** All runs use:
+**Setup.** 
+All runs use:
 - Embed model: `mistral-embed-2312`
 - Chat models: `mistral-large-latest`, `mistral-medium-latest`
 - Index: `data/real/faiss_web.index`, metadata: `data/real/chunk_meta_web.csv`
-- Strict citation prompting
+- Temp: 0.0, strict citations (no post-hoc appends)
 - Splits: `dev` (N=17), `test` (N=8)
 
-### End-to-end (strict-citation answers)
-
-```sh
 #### dev (N=17)
 | k | Model                 | F1   | Sem  | SentG | Gnd  |
 |---|-----------------------|------|------|-------|------|
@@ -474,7 +395,7 @@ README.md
 > **Metric notes.** *Sem* = semantic similarity; *SentG* = fraction of answer sentences with grounded citations; *Gnd* = answer-level groundedness.
 
 Outputs are written to `evals/out/*.txt`.
-```
+
 ```sh
 ### Retrieval-only
 
