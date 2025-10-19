@@ -12,6 +12,19 @@ from .metrics import recall_at_k, reciprocal_rank, exact_substring_match, ground
 from ..index.search_faiss import search as faiss_search
 from ..models.client_mistral import MistralClient
 
+import re
+
+def _normalize_text(s: str) -> str:
+    # lower-case, collapse punctuation/whitespace
+    return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+
+def em_from_candidates(pred: str, answers: list[str]) -> float:
+    """Return 1.0 if ANY normalized gold answer is a substring of the normalized prediction."""
+    p = _normalize_text(pred)
+    for a in answers or []:
+        if _normalize_text(a) in p:
+            return 1.0
+    return 0.0
 
 def load_labelset(path: Path) -> List[Dict[str, Any]]:
     out = []
@@ -67,19 +80,50 @@ def build_context_blocks(hits: List[Dict[str, Any]]) -> str:
     return "\n\n".join(blocks)
 
 
-def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
-                     client: MistralClient, embed_model: str, chat_model: str, k: int = 5) -> Dict[str, Any]:
+def run_end2end_eval(
+    labelset_path: Path,
+    index_path: Path,
+    meta_csv: Path,
+    client: MistralClient,
+    embed_model: str,
+    chat_model: str,
+    k: int = 5,
+) -> Dict[str, Any]:
+    import re
+
+    def _normalize_text(s: str) -> str:
+        # lowercase, remove non-alphanum to spaces, collapse spaces
+        return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+
+    def em_from_candidates(pred: str, answers: list[str]) -> float:
+        """1.0 if ANY normalized gold answer is a substring of normalized prediction; else 0.0."""
+        if not answers:
+            return 0.0
+        p = _normalize_text(pred or "")
+        for a in answers:
+            if _normalize_text(a) in p:
+                return 1.0
+        return 0.0
+
     labels = load_labelset(labelset_path)
     rows = []
     meta_rows = _load_meta_rows(meta_csv)
-    ems = []
-    grounds = []
+    ems: list[float] = []
+    grounds: list[float] = []
 
     for item in labels:
         q = item["question"]
-        #gold = item["gold_chunk_ids"]
+
+        # Resolve gold chunks from gold_doc_ids (or whatever your resolver supports)
         gold = _resolve_gold_chunks(item, meta_rows)
-        expect = item.get("expected_substrings", [])
+        # Debug: show what gold we resolved
+        if item.get("gold_doc_ids"):
+            print(f"[gold] {q} -> {item['gold_doc_ids']}")
+        else:
+            print(f"[gold] {q} -> NONE FOUND")
+
+        # Acceptable answers (new field), fallback to older key if present
+        expected_answers = item.get("answers") or item.get("expected_substrings") or []
 
         # Retrieve
         hits = faiss_search(index_path, meta_csv, client, embed_model, q, k=k)
@@ -90,25 +134,25 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
             "content": (
                 "You are a precise assistant. Answer using ONLY the CONTEXT. "
                 "Cite sources in square brackets like [doc_id pX]. If the answer is not in context, say you don't know."
-            )
+            ),
         }
         user = {
             "role": "user",
-            "content": f"QUESTION:\n{q}\n\nCONTEXT:\n{build_context_blocks(hits)}"
+            "content": f"QUESTION:\n{q}\n\nCONTEXT:\n{build_context_blocks(hits)}",
         }
 
         # Chat
         answer = client.chat(model=chat_model, messages=[system, user], temperature=0.0)
+        answer_text = (answer or "").strip()
 
-        # Metrics
-        # Retrieval metrics for reference
+        # Retrieval metrics
         retrieved_ids = [h["chunk_id"] for h in hits]
         r = recall_at_k(gold, retrieved_ids)
         rr = reciprocal_rank(gold, retrieved_ids)
 
         # QA metrics
-        em = exact_substring_match(answer, expect)
-        gr = groundedness_proxy(answer, hits, require_citation=True)
+        em = em_from_candidates(answer_text, expected_answers)
+        gr = groundedness_proxy(answer_text, hits, require_citation=True)
 
         ems.append(em)
         grounds.append(gr)
@@ -119,7 +163,7 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
             "retrieved": retrieved_ids,
             "Recall@k": r,
             "MRR": rr,
-            "answer": answer.strip(),
+            "answer": answer_text,
             "EM": em,
             "Grounded": gr,
         })
@@ -130,6 +174,7 @@ def run_end2end_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
         "n": len(labels),
     }
     return {"rows": rows, "summary": summary}
+
 
 def _load_meta_rows(meta_csv: Path) -> list[dict]:
     import csv

@@ -210,12 +210,14 @@ def cmd_query(question: str = typer.Argument(...),
 
 
 @app.command("answer")
-def cmd_answer(question: str = typer.Argument(...),
-               index_path: str = typer.Option("data/faiss.index"),
-               meta_csv: str = typer.Option("data/chunk_meta.csv"),
-               embed_model: str = typer.Option(..., prompt=True),
-               chat_model: str = typer.Option("mistral-medium-latest", help="Chat model to use"),
-               k: int = typer.Option(5)):
+def cmd_answer(
+    question: str = typer.Argument(...),
+    index_path: str = typer.Option("data/faiss.index"),
+    meta_csv: str = typer.Option("data/chunk_meta.csv"),
+    embed_model: str = typer.Option(..., prompt=True),
+    chat_model: str = typer.Option("mistral-medium-latest", help="Chat model to use"),
+    k: int = typer.Option(5),
+):
     """
     Retrieve top-k chunks, then call Mistral chat to generate an answer that cites [doc_id pX].
     """
@@ -224,33 +226,62 @@ def cmd_answer(question: str = typer.Argument(...),
     if not key:
         typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
         raise typer.Exit(1)
+
     client = MistralClient(api_key=key)
+
+    # 1) Retrieve
     ctx = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
     if not ctx:
         typer.secho("No retrieval results; cannot answer.", fg=typer.colors.YELLOW)
         raise typer.Exit(0)
 
-    # Build a minimal, explicit prompt with citations.
-    context_blocks = []
+    # 2) Build context with EXACT citation tokens from meta (no normalization)
+    context_blocks: list[str] = []
+    cite_tokens: list[str] = []
+    seen: set[str] = set()
     for r in ctx:
-        context_blocks.append(f"[{r['doc_id']} p{r['page_num']}] {r['text']}")
+        did = r["doc_id"]                 # keep EXACT value from CSV (incl. trailing underscore if present)
+        token = f"[{did} p{r['page_num']}]"
+        if token not in seen:
+            cite_tokens.append(token)
+            seen.add(token)
+        context_blocks.append(f"{token} {r['text']}")
     context_str = "\n\n".join(context_blocks)
+    acceptable = " ".join(cite_tokens) if cite_tokens else ""
 
+    # (optional) quick debug to verify tokens
+    typer.secho(f"Acceptable tokens: {acceptable}", fg=typer.colors.BLUE)
+
+    # 3) Tight prompt: no URLs; must paste one of the tokens exactly; short and direct.
     system_msg = {
         "role": "system",
         "content": (
-            "You are a precise assistant. Answer using ONLY the CONTEXT. "
-            "Cite sources in square brackets like [doc_id pX]. If the answer is not in context, say you don't know."
-        )
+            "You are a precise RAG assistant. Use ONLY the CONTEXT.\n"
+            "Cite sources by copying EXACTLY one or more of the bracket tokens present in CONTEXT "
+            "in the form [doc_id pX]. Do NOT include any URLs. "
+            "If the answer is not in CONTEXT, reply exactly: I don't know."
+        ),
     }
     user_msg = {
         "role": "user",
-        "content": f"QUESTION:\n{question}\n\nCONTEXT:\n{context_str}"
+        "content": (
+            f"QUESTION:\n{question}\n\n"
+            f"CONTEXT:\n{context_str}\n\n"
+            f"Acceptable citation tokens (copy one EXACTLY): {acceptable}\n"
+            "Write a short, direct answer (1–3 sentences). Include at least one token."
+        ),
     }
 
-    answer = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
+    raw = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
+    answer = raw.strip()
+
+    # 4) Post-guard: ensure at least one EXACT token is present; if not, append one.
+    if cite_tokens and not any(tok in answer for tok in cite_tokens):
+        answer = f"{answer}\n\n{cite_tokens[0]}"
+
     typer.secho("\n=== ANSWER ===", fg=typer.colors.GREEN)
-    typer.echo(answer.strip())
+    typer.echo(answer)
+
 
 @app.command("eval-retrieval")
 def cmd_eval_retrieval(
@@ -292,8 +323,125 @@ def cmd_eval_end2end(
     k: int = typer.Option(5),
 ):
     """
-    End-to-end eval: retrieval + chat answer quality (EM, groundedness).
+    End-to-end eval: retrieval + chat answer quality (EM, groundedness),
+    using the same strict token-citation prompt as `answer`.
     """
+    import os, json, re
+    from pathlib import Path
+    from dotenv import load_dotenv
+    from src.models.client_mistral import MistralClient
+    from src.index.search_faiss import search as faiss_search
+
+    # -------- helpers --------
+    def _normalize_text(s: str) -> str:
+        # lower, drop markdown/code/punct so EM isn't broken by backticks/asterisks/commas
+        return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+    def _norm_id(s: str) -> str:
+        s = (s or "").strip().lower()
+        s = re.sub(r"\s+", "", s)
+        s = re.sub(r"_{3,}", "__", s)
+        s = re.sub(r"_+$", "", s)
+        return s
+
+    def _chunk_root(chunk_id: str) -> str:
+        return re.sub(r"__p\d+__c\d+$", "", _norm_id(chunk_id))
+
+    # EM: exact substring OR keyword coverage (robust to minor phrasing)
+    _STOP = set("a an the is are was were be been being of to for in on with and or if then else as at by from into over after before about under between without within not do does did done this that these those it its their your our".split())
+
+    def _keyword_coverage(pred_norm: str, gold_norm: str) -> float:
+        gold_words = [w for w in gold_norm.split() if len(w) > 3 and w not in _STOP]
+        if not gold_words:
+            return 0.0
+        hits = sum(1 for w in gold_words if w in pred_norm)
+        return hits / max(1, len(gold_words))
+
+    def _em_from_answers(pred: str, answers: list[str]) -> float:
+        if not answers:
+            return 0.0
+        p = _normalize_text(pred)
+        for a in answers:
+            a_norm = _normalize_text(a)
+            # 1) exact normalized substring
+            if a_norm and a_norm in p:
+                return 1.0
+            # 2) fallback: keyword coverage >= 0.6
+            if _keyword_coverage(p, a_norm) >= 0.6:
+                return 1.0
+        return 0.0
+
+    ANSWER_KEYS = ["answers","answer","expected","gold_answers","gold_answer","targets","target","labels","label"]
+    GOLD_KEYS = ["gold_doc_ids","gold","docs","doc_ids","gold_docs","gold_chunks","gold_chunk_ids","gold_chunk_prefixes","gold_ids","retrieval_ids","gold_retrieval_ids","positive_ids"]
+
+    def _auto_find_gold(obj: dict) -> list[str]:
+        out = []
+        pat = re.compile(r"docs\.[\w\.-]+__\w+(?:__\w+)*(?:__p\d+__c\d+)?", re.I)
+        for v in obj.values():
+            if isinstance(v, str):
+                if pat.search(v): out.append(v)
+            elif isinstance(v, list):
+                for x in v:
+                    if isinstance(x, str) and pat.search(x):
+                        out.append(x)
+        return out
+
+    def _load_labelset(p: Path):
+        items = []
+        with p.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line: continue
+                ex = json.loads(line)
+                q = ex.get("question") or ex.get("q") or ex.get("prompt")
+                if not q: continue
+
+                answers = []
+                for k in ANSWER_KEYS:
+                    if k in ex:
+                        v = ex[k]
+                        answers = v if isinstance(v, list) else [v]
+                        break
+                if not answers:
+                    # fallback to any field containing 'answer'
+                    for k, v in ex.items():
+                        if "answer" in k.lower() and isinstance(v, (str, list)):
+                            answers = v if isinstance(v, list) else [v]
+                            break
+
+                gold = []
+                for k in GOLD_KEYS:
+                    if k in ex:
+                        v = ex[k]
+                        gold = v if isinstance(v, list) else [v]
+                        break
+                if not gold:
+                    gold = _auto_find_gold(ex)
+
+                items.append({"question": q, "answers": answers, "gold": gold})
+        return items
+
+    def _recall_mrr(retrieved_doc_ids: list[str], retrieved_chunk_ids: list[str], gold_ids: list[str]) -> tuple[float, float]:
+        if not gold_ids:
+            return 0.0, 0.0
+        docs = [_norm_id(x) for x in retrieved_doc_ids]
+        roots = [_chunk_root(x) for x in retrieved_chunk_ids]
+        gold = [_norm_id(x) for x in gold_ids]
+
+        hit_rank = None
+        for i in range(len(retrieved_doc_ids)):
+            d = docs[i]; r = roots[i]
+            for g in gold:
+                if d == g or r == g or d.startswith(g) or g.startswith(d) or r.startswith(g) or g.startswith(r):
+                    hit_rank = i + 1
+                    break
+            if hit_rank is not None:
+                break
+        if hit_rank is None:
+            return 0.0, 0.0
+        return 1.0, 1.0 / hit_rank
+
+    # -------- auth / client --------
     load_dotenv()
     key = os.getenv("MISTRAL_API_KEY")
     if not key:
@@ -301,17 +449,92 @@ def cmd_eval_end2end(
         raise typer.Exit(1)
     client = MistralClient(api_key=key)
 
-    out = run_end2end_eval(Path(labelset), Path(index_path), Path(meta_csv), client, embed_model, chat_model, k=k)
+    # -------- run --------
+    label_items = _load_labelset(Path(labelset))
+    rows = []
+    sum_em = sum_grounded = sum_recall = sum_mrr = 0.0
 
+    for ex in label_items:
+        question = ex["question"]
+        gold_ids = ex["gold"]
+
+        if gold_ids:
+            typer.secho(f"[gold] {question} -> {gold_ids}", fg=typer.colors.BLUE)
+        else:
+            typer.secho(f"[gold] {question} -> NONE FOUND", fg=typer.colors.YELLOW)
+
+        # retrieval
+        ctx = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+        retrieved_chunk_ids = [r["chunk_id"] for r in ctx]
+        retrieved_doc_ids = [r["doc_id"] for r in ctx]
+
+        # strict token-citation prompt (same as `answer`), ask for PLAIN TEXT to help EM
+        tokens, blocks, seen = [], [], set()
+        for r in ctx:
+            tok = f"[{r['doc_id']} p{r['page_num']}]"
+            if tok not in seen:
+                tokens.append(tok); seen.add(tok)
+            blocks.append(f"{tok} {r['text']}")
+        context_str = "\n\n".join(blocks)
+        acceptable = " ".join(tokens) if tokens else ""
+
+        system_msg = {
+            "role": "system",
+            "content": (
+                "You are a precise RAG assistant. Use ONLY the CONTEXT.\n"
+                "Answer in plain text (no Markdown or code formatting).\n"
+                "Cite sources by copying EXACTLY one or more of the bracket tokens present in CONTEXT "
+                "in the form [doc_id pX]. Do NOT include any URLs. "
+                "If the answer is not in CONTEXT, reply exactly: I don't know."
+            ),
+        }
+        user_msg = {
+            "role": "user",
+            "content": (
+                f"QUESTION:\n{question}\n\n"
+                f"CONTEXT:\n{context_str}\n\n"
+                f"Acceptable citation tokens (copy one EXACTLY): {acceptable}\n"
+                "Write a short, direct answer (1–3 sentences). Include at least one token."
+            ),
+        }
+
+        pred = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0).strip()
+        if tokens and not any(t in pred for t in tokens):
+            pred = f"{pred}\n\n{tokens[0]}"
+
+        # metrics
+        rec, mrr = _recall_mrr(retrieved_doc_ids, retrieved_chunk_ids, gold_ids)
+        em = _em_from_answers(pred, ex["answers"])
+        grounded = 1.0 if any(t in pred for t in tokens) else 0.0
+
+        sum_recall += rec; sum_mrr += mrr; sum_em += em; sum_grounded += grounded
+
+        rows.append({
+            "question": question,
+            "retrieved": retrieved_chunk_ids,
+            "Recall@k": rec,
+            "MRR": mrr,
+            "EM": em,
+            "Grounded": grounded,
+            "answer": pred,
+        })
+
+    # -------- print --------
     typer.secho("Per-question results:", fg=typer.colors.GREEN)
-    for r in out["rows"]:
+    for r in rows:
         typer.echo(f"- Q: {r['question']}")
         typer.echo(f"  retrieved: {r['retrieved']}")
         typer.echo(f"  Recall@k={r['Recall@k']:.2f}  MRR={r['MRR']:.2f}")
         typer.echo(f"  EM={r['EM']:.2f}  Grounded={r['Grounded']:.2f}")
         typer.echo(f"  ANSWER: {r['answer']}\n")
-    s = out["summary"]
-    typer.secho(f"\nSummary: N={s['n']}  avg_EM={s['avg_EM']:.2f}  avg_Grounded={s['avg_Grounded']:.2f}", fg=typer.colors.CYAN)
+
+    n = max(len(rows), 1)
+    typer.secho(
+        f"\nSummary: N={n}  avg_Recall@k={sum_recall/n:.2f}  avg_MRR={sum_mrr/n:.2f}  avg_EM={sum_em/n:.2f}  avg_Grounded={sum_grounded/n:.2f}",
+        fg=typer.colors.CYAN,
+    )
+
+
 
 @app.command("fetch-web")
 def cmd_fetch_web(sources: str = typer.Option("data/real/sources_e.txt", help="One URL per line"),

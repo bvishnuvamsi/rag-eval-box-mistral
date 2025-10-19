@@ -1,0 +1,4 @@
+{"question":"What does GET /v1/customers return?","gold_doc_patterns":["docs.stripe.com__api__customers","docs.stripe.com__api__metadata"],"expected_substrings":["/v1/customers","list"]}
+{"question":"What is a PaymentIntent used for?","gold_doc_patterns":["docs.stripe.com__api__payment_intents"],"expected_substrings":["collecting a payment","one successful charge"]}
+{"question":"What should a reviewer look for in a code review?","gold_doc_patterns":["google.github.io__eng-practices__review__"],"expected_substrings":["design","tests","functionality"]}
+{"question":"Where are Google’s code review guidelines split?","gold_doc_patterns":["google.github.io__eng-practices__review__","google.github.io__eng-practices__developer__"],"expected_substrings":["reviewer's guide","author's guide"]}
