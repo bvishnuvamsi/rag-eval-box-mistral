@@ -1,0 +1,286 @@
+{
+  "rows": [
+    {
+      "question": "What does GET /v1/customers return?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c16",
+        "docs.github.com__en__rest__users__p1__c4",
+        "docs.stripe.com__api__payment_intents__p1__c4"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6511794435425855,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "What is a PaymentIntent used for?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c19",
+        "docs.stripe.com__api__payment_intents__p1__c7",
+        "docs.stripe.com__api__setup_intents__p1__c1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3902439024390244,
+      "SemScore": 0.7273289513671697,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "A **PaymentIntent** is used to initiate and track a payment process, allowing you to attach a payment method and confirm the transaction to complete the payment.[docs.stripe.com__api__payment_intents p1]"
+    },
+    {
+      "question": "In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c5",
+        "docs.stripe.com__api__setup_intents__p1__c20",
+        "docs.stripe.com__api__customers__p1__c8"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.2181818181818182,
+      "SemScore": 0.8160030123367831,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "An object of type `'list'` with a `'data'` array represents a paginated collection of resources (e.g., customers) returned by Stripe’s bulk-fetch list endpoints. The `'data'` array contains the individual objects (e.g., customer objects) for the current page of results[docs.stripe.com__api__metadata p1]."
+    },
+    {
+      "question": "What is the purpose of the 'metadata' field on Stripe objects?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c1",
+        "docs.stripe.com__api__payment_intents__p1__c40",
+        "docs.stripe.com__api__metadata__p1__c14"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.21212121212121213,
+      "SemScore": 0.740893142780632,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "The `metadata` field on Stripe objects is a set of key-value pairs used to store additional structured information about the object, such as user details or system identifiers[docs.stripe.com__api__metadata p1]. Stripe does not use this data for processing (e.g., authorizing charges), and it remains invisible to users unless explicitly displayed[docs.stripe.com__api__metadata p1]."
+    },
+    {
+      "question": "Name some PaymentIntent statuses.",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c14",
+        "docs.stripe.com__api__payment_intents__p1__c0",
+        "docs.stripe.com__api__setup_intents__p1__c6"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3157894736842105,
+      "SemScore": 0.8612854962261504,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Some PaymentIntent statuses include **requires_payment_method**, **requires_confirmation**, **requires_action**, **processing**, **requires_capture**, **canceled**, and **succeeded**[docs.stripe.com__api__payment_intents p1]."
+    },
+    {
+      "question": "Does GET /v1/customers require parameters?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c16",
+        "docs.stripe.com__api__customers__p1__c8",
+        "docs.github.com__en__rest__users__p1__c4"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 0.5,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6838592689713046,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "What does the 'has_more' field indicate in Stripe list responses?",
+      "retrieved": [
+        "docs.stripe.com__api__p1__c4",
+        "docs.stripe.com__api__metadata__p1__c5",
+        "docs.stripe.com__api__payment_intents__p1__c17"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6788240693989153,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "What should a reviewer look for in a code review?",
+      "retrieved": [
+        "google.github.io__eng-practices__review____p1__c2",
+        "google.github.io__eng-practices__review__reviewer____p1__c0",
+        "google.github.io__eng-practices__review__developer____p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.07547169811320754,
+      "SemScore": 0.8231031395110078,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "A reviewer should examine the code for correctness, design, functionality, and adherence to best practices in **\"What to Look For In a Code Review\"** [google.github.io__eng-practices__review__reviewer__ p1]. They should also ensure the change is well-documented and maintainable [google.github.io__eng-practices__review__reviewer__ p1]."
+    },
+    {
+      "question": "What is the reviewer’s primary responsibility in Google’s guidelines?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c0",
+        "google.github.io__eng-practices____p1__c0",
+        "google.github.io__eng-practices__review__developer____p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.25925925925925924,
+      "SemScore": 0.790875942421594,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "The reviewer’s primary responsibility is to ensure that each code change (CL) maintains or improves the overall code health of Google’s codebase**[google.github.io__eng-practices__review__reviewer__standard.html p1]**. They must balance this duty while allowing developers to make progress**[google.github.io__eng-practices__review__reviewer__standard.html p1]**."
+    },
+    {
+      "question": "How should minor suggestions be marked in reviews?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__developer____p1__c0",
+        "google.github.io__eng-practices__review__reviewer____p1__c0",
+        "google.github.io__eng-practices__review____p1__c2"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 0.5,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6544882138099914,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "Where are Google’s code review guidelines split?",
+      "retrieved": [
+        "google.github.io__eng-practices__review____p1__c0",
+        "google.github.io__eng-practices__review__developer____p1__c0",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.25806451612903225,
+      "SemScore": 0.8478197346650765,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Google’s code review guidelines are split into three main parts: an overview, a guide for reviewers, and a guide for developers [google.github.io__eng-practices__review__ p1].\n\nThe developer guide is further divided into sections like writing CL descriptions, small CLs, and handling reviewer comments [google.github.io__eng-practices__review__developer__ p1]."
+    },
+    {
+      "question": "As an author, what should you do before sending a CL?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c8",
+        "google.github.io__eng-practices__review____p1__c2",
+        "google.github.io__eng-practices__review__developer____p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.07272727272727272,
+      "SemScore": 0.788954153076527,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Before sending a CL, ensure you select the most qualified reviewer, such as the code owner or someone who can provide a thorough review[google.github.io__eng-practices__review__ p1]. If the ideal reviewer is unavailable, at least CC them on the change[google.github.io__eng-practices__review__ p1]."
+    },
+    {
+      "question": "What does confirming a PaymentIntent do?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c19",
+        "google.github.io__eng-practices__review____p1__c1",
+        "docs.stripe.com__api__setup_intents__p1__c1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.2692307692307692,
+      "SemScore": 0.7674098356990703,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Confirming a PaymentIntent initiates the payment process after a payment method is attached to the PaymentIntent object[docs.stripe.com__api__payment_intents p1]. This step is required to transition the payment from its initial state (e.g., `requires_payment_method`) to processing[docs.stripe.com__api__payment_intents p1]."
+    },
+    {
+      "question": "When would a PaymentIntent require customer action?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c13",
+        "docs.stripe.com__api__setup_intents__p1__c10",
+        "docs.stripe.com__api__payment_intents__p1__c51"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3333333333333333,
+      "SemScore": 0.8228355683353188,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "A PaymentIntent requires customer action when its status is **`requires_action`**, such as for authentication (e.g., 3D Secure). [docs.stripe.com__api__payment_intents p1]"
+    },
+    {
+      "question": "What core fields are typical on a Customer object?",
+      "retrieved": [
+        "docs.stripe.com__api__customers__p1__c1",
+        "docs.stripe.com__api__payment_intents__p1__c4",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c5"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.27586206896551724,
+      "SemScore": 0.7843692377997321,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Typical core fields on a **Customer** object include **email**, **name**, **phone**, **shipping address**, and **metadata** for additional structured data.[docs.stripe.com__api__customers p1]"
+    },
+    {
+      "question": "What is the advantage of keeping CLs small?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c1",
+        "google.github.io__eng-practices__review__developer____p1__c0",
+        "google.github.io__eng-practices__review__reviewer____p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6463637799068023,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "How should review comments be written?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c3",
+        "google.github.io__eng-practices__review__developer____p1__c0",
+        "google.github.io__eng-practices__review__reviewer____p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.03636363636363636,
+      "SemScore": 0.7129107073684794,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Review comments should clearly indicate minor suggestions with prefixes like \"Nit:\" to show they are optional improvements[google.github.io__eng-practices__review__reviewer__standard.html p1].\n\nThey can also serve as teaching opportunities to share knowledge about languages, frameworks, or design principles[google.github.io__eng-practices__review__reviewer__standard.html p1]."
+    }
+  ],
+  "summary": {
+    "n": 17,
+    "avg_Recall@k": 1.0,
+    "avg_MRR": 0.9411764705882353,
+    "avg_EM": 0.0,
+    "avg_F1": 0.15980288003225254,
+    "avg_SemScore": 0.7528531586598317,
+    "avg_SentGrounded": 0.6470588235294118,
+    "avg_Grounded": 0.5882352941176471
+  }
+}

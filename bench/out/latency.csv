@@ -1,0 +1,16 @@
+model,k,question,latency_s,tokens,tokens_per_sec
+mistral-medium-2508,3,What does GET /v1/customers return?,0.473,4,8.5
+mistral-medium-2508,3,What is a PaymentIntent used for?,0.45,4,8.9
+mistral-medium-2508,3,"In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",0.847,45,53.1
+mistral-medium-2508,3,What is the purpose of the 'metadata' field on Stripe objects?,0.646,37,57.3
+mistral-medium-2508,3,Name some PaymentIntent statuses.,0.559,31,55.5
+mistral-large-latest,3,What does GET /v1/customers return?,0.45,4,8.9
+mistral-large-latest,3,What is a PaymentIntent used for?,0.424,4,9.4
+mistral-large-latest,3,"In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",0.846,44,52.0
+mistral-large-latest,3,What is the purpose of the 'metadata' field on Stripe objects?,0.924,37,40.0
+mistral-large-latest,3,Name some PaymentIntent statuses.,0.57,31,54.4
+ministral-8b-latest,3,What does GET /v1/customers return?,0.439,14,31.9
+ministral-8b-latest,3,What is a PaymentIntent used for?,0.403,14,34.7
+ministral-8b-latest,3,"In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",0.701,70,99.8
+ministral-8b-latest,3,What is the purpose of the 'metadata' field on Stripe objects?,0.726,39,53.7
+ministral-8b-latest,3,Name some PaymentIntent statuses.,0.514,37,72.0

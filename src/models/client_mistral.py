@@ -9,7 +9,7 @@ from __future__ import annotations  # allow future typing features in 3.11
 
 import os
 from dataclasses import dataclass  # compact, immutable-like config object
-from typing import List
+from typing import List, Dict, Optional, Any
 import httpx  # we picked this over requests for better timeouts/async
 import time
 import random
@@ -102,13 +102,36 @@ class MistralClient:
             out.append(emb)
         return out
 
-    def chat(self, model: str, messages: List[Dict[str, str]], temperature: float = 0.0, max_tokens: Optional[int] = 256) -> str:
-        # Cap tokens to keep responses fast/stable on free tier
-        payload = {"model": model, "messages": messages, "temperature": temperature}
+    def chat(
+        self,
+        model: str,
+        messages: List[Dict[str, str]],
+        temperature: float = 0.0,
+        top_p: Optional[float] = None,
+        max_tokens: Optional[int] = 256,
+        seed: Optional[int] = None,
+        **kwargs: Any,
+    ) -> str:
+        """Call /v1/chat/completions with extra decoding params."""
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": float(temperature),
+        }
+        if top_p is not None:
+            payload["top_p"] = float(top_p)
         if max_tokens is not None:
             payload["max_tokens"] = int(max_tokens)
+        if seed is not None:
+            # Mistral uses "random_seed"
+            payload["random_seed"] = int(seed)
+        # pass through any extra supported args without clobbering
+        for k, v in kwargs.items():
+            if k not in payload:
+                payload[k] = v
+
         data = self._post_json("/v1/chat/completions", payload)
         choices = data.get("choices", [])
         if not choices or "message" not in choices[0] or "content" not in choices[0]["message"]:
-            raise ValueError("Unexpected chat response shape")
-        return choices[0]["message"]["content"]
+            raise ValueError(f"Unexpected chat response shape: {data}")
+        return choices[0]["message"]["content"].strip()

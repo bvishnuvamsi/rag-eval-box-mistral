@@ -31,6 +31,19 @@ def _embed_query(client, model: str, query: str) -> np.ndarray:
             print(f"[cache] query hits={hits} misses={misses}  ({cache_path})")
     return np.asarray(embs[0], dtype="float32")[None, :]
 
+def _uniq_by_doc(items, k, max_per_doc=1):
+    keep = []
+    seen = {}
+    for it in items:
+        did = it["doc_id"]
+        seen[did] = seen.get(did, 0)
+        if seen[did] < max_per_doc:
+            keep.append(it)
+            seen[did] += 1
+            if len(keep) >= k:
+                break
+    return keep
+
 def search(index_path: Path, meta_csv: Path, client, embed_model: str, query: str, k: int = 5) -> list[dict]:
     index = faiss.read_index(str(index_path))
     meta = load_meta(meta_csv)
@@ -51,4 +64,7 @@ def search(index_path: Path, meta_csv: Path, client, embed_model: str, query: st
             "page_num": row["page_num"],
             "text": row["text"],
         })
+    
+    out = _uniq_by_doc(out, k, max_per_doc=1)
+    
     return out

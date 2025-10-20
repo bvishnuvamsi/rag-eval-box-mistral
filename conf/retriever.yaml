@@ -1,0 +1,13 @@
+retriever:
+  k: 3
+  # set bm25/rerank later (Step 3+), kept false by default
+  bm25: false
+  fusion: rrf      # rrf | weighted
+  rrf_k: 60
+  dense_weight: 0.5
+  bm25_weight: 0.5
+  rerank:
+    enabled: false
+    model: cross-encoder/ms-marco-MiniLM-L-6-v2
+    top_n: 50
+    keep_m: 10

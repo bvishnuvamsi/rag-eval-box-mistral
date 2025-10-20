@@ -1,0 +1,29 @@
+# Pin concrete model IDs you actually see in `python -m src.cli api-check`.
+# Avoid drifting "latest" aliases wherever possible.
+
+models:
+  embed: mistral-embed-2312            # seen in your logs
+  chat:
+    large:
+      id: mistral-large-2407   # <-- pick the exact IDs you want to pin
+      label: mistral-large (pinned)
+      capabilities: [reasoning, "32k ctx"]
+    medium:
+      id: mistral-medium-2508
+      label: mistral-medium (pinned)
+      capabilities: [balanced, "32k ctx"]
+    mixtral:
+      id: mixtral-8x7b-instruct-2410
+      label: mixtral-8x7b (MoE)
+      capabilities: [efficient, MoE]
+
+decoding:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 512
+  seed: 42
+
+run_defaults:
+  k: 3
+  rate_limit_seconds: 1
+  emb_cache_path: /tmp/emb_cache.sqlite

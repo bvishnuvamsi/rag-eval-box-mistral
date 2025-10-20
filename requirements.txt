@@ -1,0 +1,21 @@
+# core
+faiss-cpu==1.7.4
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.4.2
+rank-bm25==0.2.2
+pyyaml==6.0.1
+requests==2.31.0
+tqdm==4.66.4
+rich==13.7.1
+orjson==3.10.7
+python-dotenv==1.0.1
+
+# optional: reranker (only if --rerank is used)
+sentence-transformers==2.6.1
+torch==2.2.2
+PyYAML==6.0.2
+
+# optional: benchmarking helpers (CSV + plots; plots are optional)
+tabulate==0.9.0
+rank-bm25==0.2.2

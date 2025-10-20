@@ -1,0 +1,286 @@
+{
+  "rows": [
+    {
+      "question": "What does GET /v1/customers return?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c16",
+        "docs.stripe.com__api__metadata__p1__c10",
+        "docs.stripe.com__api__customers__p1__c15"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3448275862068966,
+      "SemScore": 0.8164320254701879,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "A `GET /v1/customers` request returns a list of `Customer` objects with details like `id`, `email`, `description`, and payment settings. [docs.stripe.com__api__customers p1]"
+    },
+    {
+      "question": "What is a PaymentIntent used for?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c19",
+        "docs.stripe.com__api__payment_intents__p1__c0",
+        "docs.stripe.com__api__payment_intents__p1__c32"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3272727272727273,
+      "SemScore": 0.7777038035007863,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "A **PaymentIntent** is used to guide the process of collecting a payment from a customer in your system. It tracks the lifecycle of a payment, including authentication and status transitions, and should be created once per order or customer session[docs.stripe.com__api__payment_intents p1]."
+    },
+    {
+      "question": "In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c5",
+        "docs.stripe.com__api__metadata__p1__c8",
+        "docs.stripe.com__api__metadata__p1__c16"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.2181818181818182,
+      "SemScore": 0.8024016651804262,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "An object of type `'list'` in Stripe list endpoints represents a paginated collection of resources, where the `data` array contains the actual response elements for that page.[docs.stripe.com__api__metadata p1] The `has_more` boolean indicates whether additional elements exist beyond the current set.[docs.stripe.com__api__metadata p1]"
+    },
+    {
+      "question": "What is the purpose of the 'metadata' field on Stripe objects?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c1",
+        "docs.stripe.com__api__metadata__p1__c0",
+        "docs.stripe.com__api__metadata__p1__c2"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.12698412698412698,
+      "SemScore": 0.7559547047616442,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "The **`metadata`** field on Stripe objects allows you to attach structured key-value data (up to 50 keys) for internal use, such as linking system IDs or storing additional context. Stripe does not use this data for processing (e.g., authorizing charges), and it remains invisible to users unless explicitly shared**[docs.stripe.com__api__metadata p1]**."
+    },
+    {
+      "question": "Name some PaymentIntent statuses.",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c14",
+        "docs.stripe.com__api__payment_intents__p1__c13",
+        "docs.stripe.com__api__payment_intents__p1__c19"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3157894736842105,
+      "SemScore": 0.8612854962261504,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Some PaymentIntent statuses include **requires_payment_method**, **requires_confirmation**, **requires_action**, **processing**, **requires_capture**, **canceled**, and **succeeded**[docs.stripe.com__api__payment_intents p1]."
+    },
+    {
+      "question": "Does GET /v1/customers require parameters?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c16",
+        "docs.stripe.com__api__metadata__p1__c10",
+        "docs.stripe.com__api__metadata__p1__c9"
+      ],
+      "Recall@k": 0.0,
+      "MRR": 0.0,
+      "EM": 0.0,
+      "F1": 0.0,
+      "SemScore": 0.6838592689713046,
+      "SentGrounded": 0.0,
+      "Grounded": 0.0,
+      "answer": "I don't know."
+    },
+    {
+      "question": "What does the 'has_more' field indicate in Stripe list responses?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata__p1__c5",
+        "docs.stripe.com__api__metadata__p1__c14",
+        "docs.stripe.com__api__metadata__p1__c13"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.18604651162790695,
+      "SemScore": 0.785384962349558,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "The **`has_more`** field indicates whether additional elements are available after the current set of results in a paginated list.\nIf **`false`**, the current set is the end of the list[docs.stripe.com__api__metadata p1]."
+    },
+    {
+      "question": "What should a reviewer look for in a code review?",
+      "retrieved": [
+        "google.github.io__eng-practices__review____p1__c2",
+        "google.github.io__eng-practices__review____p1__c1",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c3"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.24137931034482757,
+      "SemScore": 0.845884646284509,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "A reviewer should check for **functionality, complexity, tests, naming, comments, style, and documentation** in the code review[google.github.io__eng-practices__review__ p1]. They should also provide constructive feedback, even minor suggestions (marked as \"Nit:\"), while ensuring the change doesn’t worsen overall code health[google.github.io__eng-practices__review__reviewer__standard.html p1]."
+    },
+    {
+      "question": "What is the reviewer’s primary responsibility in Google’s guidelines?",
+      "retrieved": [
+        "google.github.io__eng-practices__review____p1__c2",
+        "google.github.io__eng-practices__review____p1__c0",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c0"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.2641509433962264,
+      "SemScore": 0.788212549767618,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "The reviewer’s primary responsibility is to ensure that the overall code health of Google’s codebase improves over time [google.github.io__eng-practices__review__reviewer__standard.html p1].\n\nThey must balance this duty while allowing developers to make progress on their tasks [google.github.io__eng-practices__review__reviewer__standard.html p1]."
+    },
+    {
+      "question": "How should minor suggestions be marked in reviews?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c3",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c6",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c5"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.21428571428571427,
+      "SemScore": 0.8747062285203052,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "Minor suggestions should be prefixed with \"Nit:\" to indicate they are optional points of polish. [google.github.io__eng-practices__review__reviewer__standard.html p1]"
+    },
+    {
+      "question": "Where are Google’s code review guidelines split?",
+      "retrieved": [
+        "google.github.io__eng-practices__review____p1__c0",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c0",
+        "google.github.io__eng-practices__review____p1__c2"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.5217391304347826,
+      "SemScore": 0.8537596572896113,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Google’s code review guidelines are split into three main parts: an overview, *How To Do A Code Review* (for reviewers), and *The CL Author’s Guide* (for developers)**[google.github.io__eng-practices__review__ p1]**."
+    },
+    {
+      "question": "As an author, what should you do before sending a CL?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c8",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c3",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c7"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.09836065573770493,
+      "SemScore": 0.7831376483190279,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Before sending a CL, the author should review **The CL Author’s Guide** and the **Reviewer Guide** to ensure alignment with best practices and resolve potential conflicts proactively[google.github.io__eng-practices__review__reviewer__standard.html p1]. If disagreements arise, attempt to reach consensus with the reviewer before escalation[google.github.io__eng-practices__review__reviewer__standard.html p1]."
+    },
+    {
+      "question": "What does confirming a PaymentIntent do?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c19",
+        "docs.stripe.com__api__payment_intents__p1__c36",
+        "docs.stripe.com__api__payment_intents__p1__c25"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.25,
+      "SemScore": 0.7687083698052994,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "Confirming a PaymentIntent initiates the payment process after attaching a payment method to the PaymentIntent object. This can be done during creation by setting `confirm=true` or as a separate step after updating properties [docs.stripe.com__api__payment_intents p1]."
+    },
+    {
+      "question": "When would a PaymentIntent require customer action?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents__p1__c13",
+        "docs.stripe.com__api__payment_intents__p1__c14",
+        "docs.stripe.com__api__payment_intents__p1__c29"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.3783783783783784,
+      "SemScore": 0.8253800403830649,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "A PaymentIntent requires customer action when its status is **`requires_action`**, meaning additional steps (e.g., authentication) are needed from the customer to complete the payment**[docs.stripe.com__api__payment_intents p1]**."
+    },
+    {
+      "question": "What core fields are typical on a Customer object?",
+      "retrieved": [
+        "docs.stripe.com__api__customers__p1__c1",
+        "docs.stripe.com__api__customers__p1__c5",
+        "docs.stripe.com__api__metadata__p1__c16"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.1739130434782609,
+      "SemScore": 0.7814864708227224,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Typical core fields on a **Customer** object include `email`, `name`, `phone`, `shipping`, `description`, and `metadata` for storing additional structured data**[docs.stripe.com__api__customers p1]**. Other fields like `address`, `balance`, `currency`, and `tax_exempt` may also be present**[docs.stripe.com__api__metadata p1]**."
+    },
+    {
+      "question": "What is the advantage of keeping CLs small?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c1",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c2",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c8"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.1111111111111111,
+      "SemScore": 0.7935859660365205,
+      "SentGrounded": 1.0,
+      "Grounded": 1.0,
+      "answer": "Keeping CLs (Change Lists) small ensures faster reviews and reduces delays caused by prolonged disagreements between authors and reviewers[google.github.io__eng-practices__review__reviewer__standard.html p1]. It also promotes continuous improvement by allowing incremental enhancements to code health without waiting for perfection[google.github.io__eng-practices__review__reviewer__standard.html p1]."
+    },
+    {
+      "question": "How should review comments be written?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c3",
+        "google.github.io__eng-practices__review____p1__c2",
+        "google.github.io__eng-practices__review__reviewer__standard.html__p1__c6"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0,
+      "EM": 0.0,
+      "F1": 0.13559322033898302,
+      "SemScore": 0.7218962883586633,
+      "SentGrounded": 0.5,
+      "Grounded": 0.0,
+      "answer": "Review comments should focus on principles of software design rather than personal opinion, and reviewers should accept valid alternatives demonstrated by the author. [google.github.io__eng-practices__review__reviewer__standard.html p1]\n\nLess critical suggestions should be prefixed with \"Nit:\" to indicate they are optional improvements. [google.github.io__eng-practices__review__reviewer__standard.html p1]"
+    }
+  ],
+  "summary": {
+    "n": 17,
+    "avg_Recall@k": 0.9411764705882353,
+    "avg_MRR": 0.9411764705882353,
+    "avg_EM": 0.0,
+    "avg_F1": 0.2298831618508045,
+    "avg_SemScore": 0.7952811642380823,
+    "avg_SentGrounded": 0.7352941176470589,
+    "avg_Grounded": 0.5294117647058824
+  }
+}

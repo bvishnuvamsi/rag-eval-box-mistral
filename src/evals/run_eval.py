@@ -7,6 +7,7 @@ import json
 from typing import List, Dict, Any
 
 from .metrics import recall_at_k, reciprocal_rank, exact_substring_match, groundedness_proxy
+from src.index.search_faiss import search as dense_search
 
 # We reuse your existing search + client
 from ..index.search_faiss import search as faiss_search
@@ -35,43 +36,80 @@ def load_labelset(path: Path) -> List[Dict[str, Any]]:
             out.append(json.loads(line))
     return out
 
-def run_retrieval_eval(labelset_path: Path, index_path: Path, meta_csv: Path,
-                       client: MistralClient, embed_model: str, k: int = 5) -> Dict[str, Any]:
-    labels = load_labelset(labelset_path)
-    meta_rows = _load_meta_rows(meta_csv)
+def run_retrieval_eval(
+    labelset_path: Path,
+    index_path: Path,
+    meta_csv: Path,
+    client,
+    embed_model: str,
+    k: int = 3,
+    search_fn=None,   
+    **kwargs
+):
+    """
+    Evaluate retrieval over the labelset. Allows pluggable retriever via search_fn.
+    search_fn signature must be: (index_path, meta_csv, client, embed_model, query, k) -> list[dict]
+    """
+    from src.index.search_faiss import search as dense_search
+    from src.index.search_hybrid import search as hybrid_search
+    
+    if search_fn is None:
+        search_fn = dense_search
+
     rows = []
-    r_at_k = []
-    mrr = []
+    sum_recall = 0.0
+    sum_mrr = 0.0
+    n = 0
 
-    for item in labels:
-        q = item["question"]
-        #gold = item["gold_chunk_ids"]
-        gold = _resolve_gold_chunks(item, meta_rows)
+    def gold_doc_ids(ex: dict) -> set:
+        # be lenient to different labelset schemas
+        for key in ("gold", "gold_doc_ids", "docs", "doc_ids"):
+            if key in ex and ex[key]:
+                return set(ex[key])
+        return set()
 
-        # retrieve
-        hits = faiss_search(index_path, meta_csv, client, embed_model, q, k=k)
-        retrieved_ids = [h["chunk_id"] for h in hits]
+    with open(labelset_path, "r", encoding="utf-8") as f:
+        for line in f:
+            ex = json.loads(line)
+            q = ex.get("question") or ex.get("q") or ex.get("prompt")
+            if not q:
+                continue
+            gold = gold_doc_ids(ex)
+            if not gold:
+                continue
 
-        r = recall_at_k(gold, retrieved_ids)
-        rr = reciprocal_rank(gold, retrieved_ids)
-        r_at_k.append(r)
-        mrr.append(rr)
+            hits = search_fn(index_path, meta_csv, client, embed_model, q, k=k)
+            got_ids = [h["doc_id"] for h in hits]
 
-        rows.append({
-            "question": q,
-            "gold": gold,
-            "retrieved": retrieved_ids,
-            "Recall@k": r,
-            "MRR": rr,
-        })
+            # Recall@k (any gold appears in top-k)
+            recall = 1.0 if any(g in got_ids for g in gold) else 0.0
 
-    summary = {
-        "avg_Recall@k": sum(r_at_k) / len(r_at_k) if r_at_k else 0.0,
-        "avg_MRR": sum(mrr) / len(mrr) if mrr else 0.0,
-        "n": len(labels),
+            # MRR
+            rank = None
+            for i, did in enumerate(got_ids, 1):
+                if did in gold:
+                    rank = i
+                    break
+            mrr = (1.0 / rank) if rank else 0.0
+
+            rows.append({
+                "question": q,
+                "retrieved": [f"{h['doc_id']} p{h['page_num']}" for h in hits],
+                "Recall@k": recall,
+                "MRR": mrr,
+            })
+            sum_recall += recall
+            sum_mrr += mrr
+            n += 1
+
+    return {
+        "rows": rows,
+        "summary": {
+            "n": n,
+            "avg_Recall@k": (sum_recall / n) if n else 0.0,
+            "avg_MRR": (sum_mrr / n) if n else 0.0,
+        },
     }
-    return {"rows": rows, "summary": summary}
-
 
 def build_context_blocks(hits: List[Dict[str, Any]]) -> str:
     blocks = []

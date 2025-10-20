@@ -9,6 +9,9 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 from src.index.build_faiss import build_and_save
+from src.index.search_faiss import search as dense_search
+from src.index.search_hybrid import search as hybrid_search
+
 
 
 import os
@@ -19,6 +22,9 @@ import httpx  # only for friendly error printing in api-check
 
 from typing import Optional
 
+import orjson
+from pathlib import Path
+
 # import client class (we already fixed relative imports earlier)
 try:
     from .models.client_mistral import MistralClient
@@ -27,6 +33,10 @@ try:
     from .evals.run_eval import run_retrieval_eval, run_end2end_eval
     from .ingest.fetch_web import fetch_all
     from .ingest.html_parse import parse_dir as parse_html_dir
+    from .util.config_io import load_yaml, resolve_config, save_json
+    from .ingest.make_seed_pdfs import make_seed_pdfs
+    from .ingest.pdf_parse import parse_dir
+    from .ingest.chunkers import make_chunks
 except ImportError:
     from models.client_mistral import MistralClient
     from index.build_faiss import build_and_save as build_index_and_meta
@@ -34,6 +44,45 @@ except ImportError:
     from evals.run_eval import run_retrieval_eval, run_end2end_eval
     from ingest.fetch_web import fetch_all
     from ingest.html_parse import parse_dir as parse_html_dir
+    from util.config_io import load_yaml, resolve_config, save_json
+    from ingest.make_seed_pdfs import make_seed_pdfs
+    from ingest.pdf_parse import parse_dir
+    from ingest.chunkers import make_chunks
+
+from types import SimpleNamespace
+
+def _resolve_and_log_config(*, k=None, embed_model=None, chat_model=None, labelset=None):
+    # YAMLs are optional
+    settings = load_yaml("conf/settings.yaml") if Path("conf/settings.yaml").exists() else {}
+    retr_conf = load_yaml("conf/retriever.yaml") if Path("conf/retriever.yaml").exists() else {}
+
+    # Reuse your resolve_config (expects an args-like object)
+    args_ns = SimpleNamespace(k=k, embed_model=embed_model, chat_model=chat_model, labelset=labelset)
+    resolved = resolve_config(args_ns, settings, retr_conf)
+
+    # Print + persist
+    pretty = orjson.dumps(resolved, option=orjson.OPT_INDENT_2).decode()
+    typer.secho("Resolved config:\n" + pretty, fg=typer.colors.BLUE)
+    save_json("evals/out/run_config.json", resolved)
+
+    return resolved
+
+def _write_versions(out_path="evals/out/versions.txt"):
+    try:
+        import faiss, httpx, yaml, orjson, typer as _typer
+        lines = [
+            f"python={sys.version.split()[0]}",
+            f"faiss={getattr(__import__('faiss'),'__version__','unknown')}",
+            f"httpx={httpx.__version__}",
+            f"typer={_typer.__version__}",
+            f"orjson={orjson.__version__}",
+            f"pyyaml={yaml.__version__}",
+        ]
+    except Exception as e:
+        lines = [f"version-capture-error={e}"]
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(out_path).write_text("\n".join(lines))
+
 
 
 app = typer.Typer(help="RAG Eval Box CLI")
@@ -217,12 +266,17 @@ def cmd_answer(
     embed_model: str = typer.Option(..., prompt=True),
     chat_model: str = typer.Option("mistral-medium-latest", help="Chat model to use"),
     k: int = typer.Option(5),
+    temperature: float = typer.Option(0.0),
+    top_p: float = typer.Option(1.0),
+    max_tokens: int = typer.Option(512),
+    seed: int = typer.Option(42),
 ):
     """
     Retrieve top-k chunks, then call Mistral chat to generate an answer that cites [doc_id pX].
     """
     load_dotenv()
     key = os.getenv("MISTRAL_API_KEY")
+    _ = _resolve_and_log_config(k=k, embed_model=embed_model, chat_model=chat_model, labelset=None)
     if not key:
         typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
         raise typer.Exit(1)
@@ -273,9 +327,15 @@ def cmd_answer(
         "Do not invent tokens; only use tokens shown above."
         ),
     }
-
-
-    raw = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
+    #raw = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0)
+    raw = client.chat(
+        model=chat_model,
+        messages=[system_msg, user_msg],
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        seed=seed,  # ignored by the API if unsupported
+    )
     answer = raw.strip()
 
     # IMPORTANT: no post-append. If model forgot a token, we show it as-is.
@@ -289,18 +349,41 @@ def cmd_eval_retrieval(
     meta_csv: str = typer.Option("data/chunk_meta.csv"),
     embed_model: str = typer.Option(..., prompt=True),
     k: int = typer.Option(5),
+    bm25: bool = typer.Option(False, "--bm25", help="Use BM25+dense hybrid (RRF)"),
+
 ):
     """
     Evaluate retrieval quality (Recall@k, MRR) over the labelset.
     """
     load_dotenv()
     key = os.getenv("MISTRAL_API_KEY")
+    _ = _resolve_and_log_config(k=k, embed_model=embed_model, chat_model=None, labelset=labelset)
     if not key:
         typer.secho("Missing MISTRAL_API_KEY", fg=typer.colors.RED)
         raise typer.Exit(1)
     client = MistralClient(api_key=key)
 
-    out = run_retrieval_eval(Path(labelset), Path(index_path), Path(meta_csv), client, embed_model, k=k)
+    if bm25:
+        from src.index.search_hybrid import search as search_fn
+    else:
+        from src.index.search_faiss import search as search_fn    
+
+    _write_versions()
+
+    search_fn = hybrid_search if bm25 else dense_search
+    #search_fn = hybrid_search if bm25 else None
+
+    out = run_retrieval_eval(
+        Path(labelset), Path(index_path), Path(meta_csv),
+        client, embed_model, k=k, search_fn=search_fn
+    )
+
+    #cfg = _resolve_and_log_config(k=k, embed_model=embed_model, chat_model=None, labelset=labelset)
+    #cfg["retriever"]["bm25"] = bm25  # reflect the flag in the printout
+
+    #import json, typer
+    #typer.secho("Resolved config:", fg=typer.colors.CYAN)
+    #typer.echo(json.dumps(cfg, indent=2))
 
     # Pretty-print
     typer.secho("Per-question results:", fg=typer.colors.GREEN)
@@ -311,6 +394,13 @@ def cmd_eval_retrieval(
     s = out["summary"]
     typer.secho(f"\nSummary: N={s['n']}  avg_Recall@k={s['avg_Recall@k']:.2f}  avg_MRR={s['avg_MRR']:.2f}", fg=typer.colors.CYAN)
 
+    # Save retrieval JSON
+    split = "dev" if "dev" in Path(labelset).stem else ("test" if "test" in Path(labelset).stem else "run")
+    out_json = f"evals/out/{split}_retrieval_k{k}.json"
+    save_json(out_json, out)
+    typer.secho(f"Wrote {out_json}", fg=typer.colors.GREEN)
+
+
 
 @app.command("eval-end2end")
 def cmd_eval_end2end(
@@ -320,6 +410,11 @@ def cmd_eval_end2end(
     embed_model: str = typer.Option(..., prompt=True),
     chat_model: str = typer.Option("mistral-medium-latest"),
     k: int = typer.Option(5),
+    bm25: bool = typer.Option(False, "--bm25", help="Use BM25+dense hybrid (RRF)"),
+    Temperature: float = typer.Option(0.0),
+    top_p: float = typer.Option(1.0),
+    max_tokens: int = typer.Option(512),
+    seed: int = typer.Option(42),
 ):
     """
     End-to-end eval: retrieval + answer quality with
@@ -547,6 +642,22 @@ def cmd_eval_end2end(
         raise typer.Exit(1)
     client = MistralClient(api_key=key)
 
+    if bm25:
+        from src.index.search_hybrid import search as search_fn
+    else:
+        from src.index.search_faiss import search as search_fn
+
+    # 🔧 make sure we pass chat_model to the resolver (so it shows in flags)
+    cfg = _resolve_and_log_config(k=k, embed_model=embed_model, chat_model=chat_model, labelset=labelset)
+    dec = cfg.get("decoding", {})
+    temperature = float(dec.get("temperature", 0.0))
+    top_p = float(dec.get("top_p", 1.0))
+    max_tokens = int(dec.get("max_tokens", 512))
+    seed = int(dec.get("seed", 42))
+    _write_versions()
+
+    search_fn = hybrid_search if bm25 else dense_search
+
     # ---------------- run ----------------
     label_items = _load_labelset(Path(labelset))
     rows = []
@@ -561,7 +672,9 @@ def cmd_eval_end2end(
             typer.secho(f"[gold] {question} -> NONE FOUND", fg=typer.colors.YELLOW)
 
         # retrieval
-        ctx = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+        #ctx = faiss_search(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+        ctx = search_fn(Path(index_path), Path(meta_csv), client, embed_model, question, k=k)
+
         retrieved_chunk_ids = [r["chunk_id"] for r in ctx]
         retrieved_doc_ids = [r["doc_id"] for r in ctx]
 
@@ -596,8 +709,15 @@ def cmd_eval_end2end(
             ),
         }
 
-
-        pred = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0).strip()
+        #pred = client.chat(model=chat_model, messages=[system_msg, user_msg], temperature=0.0).strip()
+        pred = client.chat(
+        model=chat_model,
+        messages=[system_msg, user_msg],
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        seed=seed,
+            ).strip()
 
         # metrics
         rec, mrr = _recall_mrr(retrieved_doc_ids, retrieved_chunk_ids, gold_ids)
@@ -645,6 +765,29 @@ def cmd_eval_end2end(
         fg=typer.colors.CYAN,
     )
 
+    # Write JSON artifact
+    from datetime import datetime
+    #from util.config_io import save_json
+
+        # 💾 write run JSON
+    split = "dev" if "dev" in Path(labelset).stem else ("test" if "test" in Path(labelset).stem else "run")
+    out_json = f"evals/out/{split}_{chat_model}_k{k}.json"
+    save_json(out_json, {
+        "rows": rows,
+        "summary": {
+            "n": n,
+            "avg_Recall@k": sum_recall/n,
+            "avg_MRR": sum_mrr/n,
+            "avg_EM": sum_em/n,
+            "avg_F1": sum_f1/n,
+            "avg_SemScore": sum_sem/n,
+            "avg_SentGrounded": sum_sent_grounded/n,
+            "avg_Grounded": sum_ans_grounded/n,
+        },
+    })
+    typer.secho(f"Wrote {out_json}", fg=typer.colors.GREEN)
+
+
 
 
 
@@ -690,6 +833,28 @@ def cmd_build_faiss(
         batch_size=batch_size,
     )
     typer.secho(f"Built index with {n} chunks -> {index_path}", fg=typer.colors.GREEN)
+
+@app.command("bench-latency")
+def cmd_bench_latency(
+    models: str = typer.Option("mistral-medium-2508,mistral-large-2407,mixtral-8x7b-instruct-2410"),
+    k: int = typer.Option(3),
+    index_path: str = typer.Option("data/real/faiss_web.index"),
+    meta_csv: str = typer.Option("data/real/chunk_meta_web.csv"),
+    embed_model: str = typer.Option("mistral-embed-2312"),
+    labelset: str = typer.Option("src/evals/qa_labelset_dev.jsonl"),
+):
+    """Run a simple E2E latency bench and write bench/out/latency.csv"""
+    import subprocess, sys
+    cmd = [
+        sys.executable, "bench/latency.py",
+        "--models", models, "--k", str(k),
+        "--index-path", index_path, "--meta-csv", meta_csv,
+        "--embed-model", embed_model, "--labelset", labelset,
+    ]
+    typer.secho(" ".join(cmd), fg=typer.colors.BLUE)
+    subprocess.check_call(cmd)
+    typer.secho("Done. See bench/out/latency.csv", fg=typer.colors.GREEN)
+
 
 
 if __name__ == "__main__":

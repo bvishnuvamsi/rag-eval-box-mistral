@@ -396,7 +396,6 @@ All runs use:
 
 Outputs are written to `evals/out/*.txt`.
 
-```sh
 ### Retrieval-only
 
 #### dev (N=17)
@@ -413,7 +412,6 @@ Outputs are written to `evals/out/*.txt`.
 | 5 |   1.00   | 0.94|
 | 8 |   1.00   | 0.94|
 
-```
 ---
 
 ### Reproduce

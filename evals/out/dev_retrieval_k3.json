@@ -1,0 +1,179 @@
+{
+  "rows": [
+    {
+      "question": "What does GET /v1/customers return?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata p1",
+        "docs.github.com__en__rest__users p1",
+        "docs.stripe.com__api__payment_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "What is a PaymentIntent used for?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__setup_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "In Stripe list endpoints (e.g., /v1/customers), what does an object of type 'list' with a 'data' array represent?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata p1",
+        "docs.stripe.com__api__setup_intents p1",
+        "docs.stripe.com__api__customers p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "What is the purpose of the 'metadata' field on Stripe objects?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata p1",
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__metadata p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "Name some PaymentIntent statuses.",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__setup_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "Does GET /v1/customers require parameters?",
+      "retrieved": [
+        "docs.stripe.com__api__metadata p1",
+        "docs.stripe.com__api__customers p1",
+        "docs.github.com__en__rest__users p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 0.5
+    },
+    {
+      "question": "What does the 'has_more' field indicate in Stripe list responses?",
+      "retrieved": [
+        "docs.stripe.com__api p1",
+        "docs.stripe.com__api__metadata p1",
+        "docs.stripe.com__api__payment_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 0.5
+    },
+    {
+      "question": "What should a reviewer look for in a code review?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__ p1",
+        "google.github.io__eng-practices__review__reviewer__ p1",
+        "google.github.io__eng-practices__review__developer__ p1"
+      ],
+      "Recall@k": 0.0,
+      "MRR": 0.0
+    },
+    {
+      "question": "What is the reviewer’s primary responsibility in Google’s guidelines?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html p1",
+        "google.github.io__eng-practices__ p1",
+        "google.github.io__eng-practices__review__developer__ p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "How should minor suggestions be marked in reviews?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__developer__ p1",
+        "google.github.io__eng-practices__review__reviewer__ p1",
+        "google.github.io__eng-practices__review__ p1"
+      ],
+      "Recall@k": 0.0,
+      "MRR": 0.0
+    },
+    {
+      "question": "Where are Google’s code review guidelines split?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__ p1",
+        "google.github.io__eng-practices__review__developer__ p1",
+        "google.github.io__eng-practices__review__reviewer__standard.html p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 0.3333333333333333
+    },
+    {
+      "question": "As an author, what should you do before sending a CL?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html p1",
+        "google.github.io__eng-practices__review__ p1",
+        "google.github.io__eng-practices__review__developer__ p1"
+      ],
+      "Recall@k": 0.0,
+      "MRR": 0.0
+    },
+    {
+      "question": "What does confirming a PaymentIntent do?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents p1",
+        "google.github.io__eng-practices__review__ p1",
+        "docs.stripe.com__api__setup_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "When would a PaymentIntent require customer action?",
+      "retrieved": [
+        "docs.stripe.com__api__payment_intents p1",
+        "docs.stripe.com__api__setup_intents p1",
+        "docs.stripe.com__api__payment_intents p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "What core fields are typical on a Customer object?",
+      "retrieved": [
+        "docs.stripe.com__api__customers p1",
+        "docs.stripe.com__api__payment_intents p1",
+        "google.github.io__eng-practices__review__reviewer__standard.html p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    },
+    {
+      "question": "What is the advantage of keeping CLs small?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html p1",
+        "google.github.io__eng-practices__review__developer__ p1",
+        "google.github.io__eng-practices__review__reviewer__ p1"
+      ],
+      "Recall@k": 0.0,
+      "MRR": 0.0
+    },
+    {
+      "question": "How should review comments be written?",
+      "retrieved": [
+        "google.github.io__eng-practices__review__reviewer__standard.html p1",
+        "google.github.io__eng-practices__review__developer__ p1",
+        "google.github.io__eng-practices__review__reviewer__ p1"
+      ],
+      "Recall@k": 1.0,
+      "MRR": 1.0
+    }
+  ],
+  "summary": {
+    "n": 17,
+    "avg_Recall@k": 0.7647058823529411,
+    "avg_MRR": 0.6666666666666666
+  }
+}
