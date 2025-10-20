@@ -187,6 +187,11 @@ python -m src.cli eval-retrieval \
   --k 5
 ```
 
+- Expected (dev, k=3, dense-only): Recall@k ≈ 0.88, MRR ≈ 0.79
+- End-to-end (dev, k=3, mistral-medium-latest): F1 ≈ 0.19, SentG ≈ 0.74, Gnd ≈ 0.65
+- Hybrid (BM25+dense) on this small corpus didn’t improve F1; keep dense-only by default.
+
+
 ## 5) (Optional) Build your own dataset from PDFs or URLs
 
 A) Tiny seed PDFs (quick demo)
@@ -401,7 +406,7 @@ Usage notes
 
 > If you are the content owner and want a URL removed from the example set, open an issue or PR and I’ll remove it immediately.
 
-## 14)Ablation: `k` × model on dev/test
+## 14) Ablation: `k` × model on dev/test
 
 **Setup.** 
 All runs use:
