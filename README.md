@@ -15,6 +15,11 @@ source .venv/bin/activate
 pip install -U pip
 pip install -r requirements.txt
 ```
+> **Optional (for hybrid search)**  
+If you plan to use `--bm25`, make sure the BM25 dependency is installed:
+```sh
+pip install rank-bm25==0.2.2
+```
 
 Create a .env file at the repo root:
 
@@ -108,6 +113,38 @@ Acceptable tokens: [docs.stripe.com__api__customers p1] [docs.stripe.com__api__m
 === ANSWER ===
 GET /v1/customers returns a list of Customer objects … [docs.stripe.com__api__customers p1]
 ```
+
+### 3b) Hybrid retrieval (BM25 + dense, optional)
+
+You can enable hybrid retrieval (dense + BM25 with rank-fusion) by adding `--bm25` on eval commands.
+
+Under the hood this uses RRF (reciprocal rank fusion) with defaults:
+- `rrf_k=60`
+- `dense_weight=0.5`
+- `bm25_weight=0.5`
+
+**Retrieval-only (hybrid on)**
+```sh
+python -m src.cli eval-retrieval \
+  --embed-model mistral-embed-2312 \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv \
+  --labelset src/evals/qa_labelset_eng.jsonl \
+  --k 5 \
+  --bm25
+```
+
+End-to-end (hybrid on)
+```sh
+python -m src.cli eval-end2end \
+  --embed-model mistral-embed-2312 \
+  --index-path data/real/faiss_web.index \
+  --meta-csv data/real/chunk_meta_web.csv \
+  --labelset src/evals/qa_labelset_eng.jsonl \
+  --chat-model mistral-medium-latest \
+  --k 5 \
+  --bm25
+  ```
 
 ## 4) Evaluate
 We include a small labelset `src/evals/qa_labelset_eng.jsonl`. Each line has:
@@ -270,6 +307,7 @@ Common Flags
 * --index-path data/real/faiss_web.index
 * --meta-csv data/real/chunk_meta_web.csv
 * --k 5
+* --bm25  # enable hybrid retrieval (BM25 + dense with RRF)
 
 ## 10) Why you’re seeing the cache logs
 
@@ -337,7 +375,8 @@ python -m src.cli eval-end2end \
   --meta-csv data/real/chunk_meta_web.csv \
   --labelset src/evals/qa_labelset_eng.jsonl \
   --chat-model mistral-medium-latest \
-  --k 5
+  --k 5 \
+  --bm25
 ```
 
 ## 13) Dataset & Source References
