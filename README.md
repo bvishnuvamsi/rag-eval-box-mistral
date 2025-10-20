@@ -1,5 +1,12 @@
 # RAG-Eval-Box (Mistral + FAISS) — README
 
+## What this repo shows:
+- End-to-end RAG on Mistral (ingest → FAISS → retrieve → generate with strict citations → eval).
+- Groundedness enforced at the sentence level; dev/test label sets; Recall/MRR, F1, semantic similarity reported.
+- Ablation over k ∈ {3,5,8} and two Mistral chat models; optional BM25+dense hybrid.
+- Default recommendation: k=3, cost-efficient mistral-medium-latest (similar F1 to large; often better grounding at higher k).
+- (Optional table) Ops snapshot: p50/p95, tokens/sec, $/100Q (model@k=3).
+
 > **Goal**: a tiny, reproducible RAG pipeline to ingest docs → build a FAISS index → retrieve → answer with strict bracket citations → run end-to-end eval (Recall/MRR + EM + Groundedness).
 
 This repo already works end-to-end; follow the copy-and-paste commands below.
@@ -252,11 +259,9 @@ Flexible loader: the eval code tries several common field names (answers, gold_d
 [docs.stripe.com__api__metadata p1] <chunk text…>
 ```
 
-* We show Acceptable citation tokens (the bracketed IDs above) and the prompt forces the model to copy one exactly.
-* No post-hoc citation appends. If the model fails to include a valid token, that sentence is ungrounded and the answer-level groundedness can be 0.
-* Metrics:
-  * SentGrounded: fraction of answer sentences that contain ≥1 exact bracket token from retrieved context.
-  * Grounded: 1 if the answer contains ≥1 exact bracket token anywhere; else 0.
+- Groundedness is computed at the **sentence level**. A sentence is grounded iff it contains ≥1 exact bracket token that appears in the retrieved context.  
+- **AnswerGrounded = 1 only if all sentences are grounded.** We never append citations post-hoc; missing citations count against both sentence- and answer-level scores.
+
 
 ## 8) Troubleshooting
 
@@ -437,6 +442,12 @@ All runs use:
 | 8 | mistral-medium-latest | 0.22 | 0.80 | 0.94  | 0.88 |
 
 > **Metric notes.** *Sem* = semantic similarity; *SentG* = fraction of answer sentences with grounded citations; *Gnd* = answer-level groundedness.
+
+*Sem* = cosine similarity between sentence embeddings of the prediction and the closest gold answer, averaged over answers.
+- Encoder: `mistral-embed-2312` (mean-pooled)
+- Preprocessing: lowercase, strip punctuation, collapse whitespace
+- Score: `Sem = mean_i max_j cosine(emb(pred_i), emb(gold_j))`
+
 
 Outputs are written to `evals/out/*.txt`.
 
